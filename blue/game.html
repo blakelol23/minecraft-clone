@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BlockieCraft</title>
+  <link rel="stylesheet" href="./css/game.css"/>
+</head>
+<body>
+  <div id="titleCard">
+    <h1>BlockieCraft</h1>
+    <p>Click to play &nbsp;·&nbsp; <strong>WASD</strong> move &nbsp;·&nbsp; <strong>Space</strong> jump &nbsp;·&nbsp; <strong>2×W</strong> sprint &nbsp;·&nbsp; <strong>Shift</strong> sneak &nbsp;·&nbsp; <strong>F5/V</strong> camera &nbsp;·&nbsp; <strong>1-9</strong> hotbar &nbsp;·&nbsp; <strong>E</strong> inventory &nbsp;·&nbsp; <strong>T</strong> or <strong>/</strong> chat &nbsp;·&nbsp; <strong>LMB</strong> break &nbsp;·&nbsp; <strong>RMB</strong> place &nbsp;·&nbsp; <strong>R</strong> respawn</p>
+    <p id="worldMeta">World: Overworld · Seed: 48151623 · Preset: Balanced</p>
+  </div>
+  <div id="crosshair">
+    <svg viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg" fill="none">
+      <line x1="13" y1="2" x2="13" y2="10" stroke="#000" stroke-width="3" stroke-linecap="square"/>
+      <line x1="13" y1="16" x2="13" y2="24" stroke="#000" stroke-width="3" stroke-linecap="square"/>
+      <line x1="2" y1="13" x2="10" y2="13" stroke="#000" stroke-width="3" stroke-linecap="square"/>
+      <line x1="16" y1="13" x2="24" y2="13" stroke="#000" stroke-width="3" stroke-linecap="square"/>
+      <line x1="13" y1="2" x2="13" y2="10" stroke="#fff" stroke-width="1.25" stroke-linecap="square"/>
+      <line x1="13" y1="16" x2="13" y2="24" stroke="#fff" stroke-width="1.25" stroke-linecap="square"/>
+      <line x1="2" y1="13" x2="10" y2="13" stroke="#fff" stroke-width="1.25" stroke-linecap="square"/>
+      <line x1="16" y1="13" x2="24" y2="13" stroke="#fff" stroke-width="1.25" stroke-linecap="square"/>
+    </svg>
+  </div>
+  <div id="attackIndicator"><div id="attackFill"></div></div>
+  <div id="hurtOverlay"></div>
+  <div id="underwaterOverlay"></div>
+  <div id="underwaterSurface"></div>
+  <div id="centerMsg"></div>
+  <div id="stats"></div>
+  <div id="audioDebug"></div>
+  <div id="fpsCounter"></div>
+  <!-- F3 Debug Screen -->
+  <div id="f3Screen">
+    <div id="f3Left"></div>
+    <div id="f3Right"></div>
+  </div>
+  <!-- F3+Q Help Overlay -->
+  <div id="f3Overlay"></div>
+  <!-- Settings Overlay -->
+  <div id="settingsOverlay">
+    <div id="pauseMenuWindow" class="open">
+      <div class="pm-title">Game Menu</div>
+      <div class="pm-grid">
+        <button class="pm-btn pm-full" onclick="pauseBackToGame()">Back to Game</button>
+        <button class="pm-btn" onclick="pausePlaceholder('Advancements are not implemented yet.')">Advancements</button>
+        <button class="pm-btn" onclick="pauseShowStatistics()">Statistics</button>
+        <button class="pm-btn" onclick="pausePlaceholder('Feedback panel is not implemented yet.')">Give Feedback</button>
+        <button class="pm-btn" onclick="pausePlaceholder('Bug report panel is not implemented yet.')">Report Bugs</button>
+        <button class="pm-btn" onclick="pauseOpenOptions()">Options...</button>
+        <button class="pm-btn" onclick="pausePlaceholder('LAN mode is not implemented yet.')">Open to LAN</button>
+        <button class="pm-btn" onclick="pauseSaveGame()">Save Game</button>
+        <button class="pm-btn pm-full pm-danger" onclick="pauseSaveAndQuitToTitle()">Save and Quit to Title</button>
+      </div>
+    </div>
+    <div id="settingsWindow">
+      <div class="sw-title">Game Settings</div>
+      <div class="sw-tabs">
+        <button class="sw-tab active" data-tab="video" onclick="settingsShowTab('video')">Video Settings...</button>
+        <button class="sw-tab" data-tab="sound" onclick="settingsShowTab('sound')">Music &amp; Sound...</button>
+        <button class="sw-tab" data-tab="controls" onclick="settingsShowTab('controls')">Controls...</button>
+      </div>
+      <!-- VIDEO TAB -->
+      <div id="swVideo" class="sw-page active">
+        <div class="sw-row">
+          <div class="sw-lbl">Render Distance</div>
+          <div class="sw-slider-wrap" id="sRD"><div class="sw-slider-fill" id="sRDFill"></div><div class="sw-slider-label" id="sRDLabel">3 chunks</div></div>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">Max Framerate</div>
+          <button class="sw-btn" id="sFPS" onclick="settingsCycleFPS()">Max Framerate: Unlimited</button>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">Field of View</div>
+          <div class="sw-slider-wrap" id="sFOV"><div class="sw-slider-fill" id="sFOVFill"></div><div class="sw-slider-label" id="sFOVLabel">75°</div></div>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">Brightness</div>
+          <div class="sw-slider-wrap" id="sBright"><div class="sw-slider-fill" id="sBrightFill"></div><div class="sw-slider-label" id="sBrightLabel">50%</div></div>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">Shadows</div>
+          <button class="sw-btn" id="sShadows" onclick="settingsToggle('shadows')">Shadows: ON</button>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">Clouds</div>
+          <button class="sw-btn" id="sClouds" onclick="settingsToggle('clouds')">Clouds: ON</button>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">Particles</div>
+          <button class="sw-btn" id="sParticles" onclick="settingsToggle('particles')">Particles: ON</button>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">View Bobbing</div>
+          <button class="sw-btn" id="sViewBob" onclick="settingsToggle('viewBobbing')">View Bobbing: ON</button>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">FPS Counter</div>
+          <button class="sw-btn" id="sFPSDisp" onclick="settingsToggle('showFPS')">FPS Counter: ON</button>
+        </div>
+        <div class="sw-row">
+          <div class="sw-lbl">Fullscreen</div>
+          <button class="sw-btn" id="sFullscreen" onclick="settingsToggle('fullscreen')">Fullscreen: OFF</button>
+        </div>
+      </div>
+      <!-- SOUND TAB -->
+      <div id="swSound" class="sw-page">
+        <div class="sw-row sw-full">
+          <div class="sw-lbl">Master Volume</div>
+          <div class="sw-slider-wrap" id="sVolMaster"><div class="sw-slider-fill" id="sVolMasterFill"></div><div class="sw-slider-label" id="sVolMasterLabel">50%</div></div>
+        </div>
+        <div class="sw-row sw-full">
+          <div class="sw-lbl">Music</div>
+          <div class="sw-slider-wrap" id="sVolMusic"><div class="sw-slider-fill" id="sVolMusicFill"></div><div class="sw-slider-label" id="sVolMusicLabel">100%</div></div>
+        </div>
+        <div class="sw-row sw-full">
+          <div class="sw-lbl">Sound Effects</div>
+          <button class="sw-btn sw-full" id="sSFX" onclick="settingsToggle('sfx')" style="margin-top:2px">Sound Effects: ON</button>
+        </div>
+        <div class="sw-hint">
+          <b>Tip:</b> Ambient music fades between day and night tracks. Rain sound triggers automatically outdoors. Lower Master Volume if ambient audio is too loud.
+        </div>
+      </div>
+      <!-- CONTROLS TAB -->
+      <div id="swControls" class="sw-page">
+        <div class="sw-row">
+          <div class="sw-lbl">Mouse Sensitivity</div>
+          <div class="sw-slider-wrap" id="sSens"><div class="sw-slider-fill" id="sSensFill"></div><div class="sw-slider-label" id="sSensLabel">50%</div></div>
+        </div>
+        <div class="sw-controls-list">
+          <b>WASD</b> Move &nbsp;·&nbsp; <b>Space</b> Jump &nbsp;·&nbsp; <b>2xW</b> Sprint<br>
+          <b>Shift</b> Sneak &nbsp;·&nbsp; <b>E</b> Inventory &nbsp;·&nbsp; <b>T / /</b> Chat<br>
+          <b>F5 / V</b> Camera &nbsp;·&nbsp; <b>R</b> Respawn &nbsp;·&nbsp; <b>1–9</b> Hotbar<br>
+          <b>LMB</b> Break Block &nbsp;·&nbsp; <b>RMB</b> Place Block<br>
+          <b>Esc</b> Settings
+        </div>
+      </div>
+      <button class="sw-done" onclick="pauseCloseOptions()">Done</button>
+    </div>
+  </div>
+  <div id="hotbarOuter">
+    <div id="itemName"></div>
+    <div id="airBarWrap"><div id="airBar"></div></div>
+    <div id="statusBars">
+      <div class="bar-group" id="healthBar"></div>
+      <div class="hunger-stack">
+        <div class="bar-group" id="hungerBar"></div>
+        <div class="bar-group" id="saturationBar"></div>
+      </div>
+    </div>
+    <div id="xpBarWrap">
+      <div id="xpLevelLabel">0</div>
+      <div id="xpBar"><div id="xpFill"></div></div>
+    </div>
+    <div id="hotbar"></div>
+  </div>
+
+  <div id="chatOverlay">
+    <div id="chatLog"></div>
+    <div id="chatInputWrap">
+      <input id="chatInput" type="text" autocomplete="off" spellcheck="false"/>
+      <div id="chatSuggest"></div>
+    </div>
+  </div>
+
+  <div id="sneakIndicator">Sneaking</div>
+
+  <div id="invOverlay">
+    <div id="invWindow">
+      <div id="invTop">
+        <div>
+          <div class="inv-lbl">Armor</div>
+          <div id="armorCol"></div>
+        </div>
+        <canvas id="playerCanvas" width="96" height="128"></canvas>
+        <div id="craftArea">
+          <div class="inv-lbl">Crafting</div>
+          <div id="craftRow">
+            <div id="craftGrid"></div>
+            <div id="craftArrowArea">▶</div>
+            <div id="craftOut" class="inv-slot" title="Craft result"></div>
+          </div>
+          <div id="craftUtilityRow">
+            <div id="offhandSlotWrap">
+              <div class="inv-lbl">Offhand</div>
+              <div id="offhandSlot" class="inv-slot" title="Offhand (coming soon)">
+                <span class="armor-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img" focusable="false">
+                    <path d="M12 3l7 3v6c0 4.8-3.2 8.1-7 9-3.8-.9-7-4.2-7-9V6z"/>
+                    <path d="M12 6v12"/>
+                  </svg>
+                </span>
+              </div>
+            </div>
+            <button id="recipeBookBtn" type="button" title="Recipe Book">📗</button>
+          </div>
+        </div>
+      </div>
+      <div id="invMain">
+        <div class="inv-lbl">Inventory</div>
+        <div id="invRows"></div>
+        <div id="invHotbarRow" class="inv-row"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="breakBar"><div id="breakFill"></div></div>
+  <div id="dragGhost"><canvas width="32" height="32"></canvas></div>
+
+  <div id="tableOverlay">
+    <div id="tableWindow">
+      <div class="inv-lbl">Crafting Table</div>
+      <div id="tableRow">
+        <div id="tableGrid"></div>
+        <div id="craftArrowArea2" style="font-size:16px;color:#555;padding:0 4px;">▶</div>
+        <div id="tableOut" class="inv-slot" title="Craft result"></div>
+      </div>
+      <div id="tableInvRows">
+        <div class="inv-lbl">Inventory</div>
+        <div id="tableInvMain"></div>
+        <div id="tableHotbarRow" class="inv-row"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="chestOverlay">
+    <div id="chestWindow">
+      <div class="inv-lbl">Chest</div>
+      <div id="chestStorageRows"></div>
+      <div id="chestInvRows">
+        <div class="inv-lbl">Inventory</div>
+        <div id="chestInvMain"></div>
+        <div id="chestHotbarRow" class="inv-row"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="furnaceOverlay">
+    <div id="furnaceWindow">
+      <div class="inv-lbl furnace-title">Furnace</div>
+      <div id="furnaceRow">
+        <button id="furnaceRecipeBookBtn" type="button" title="Recipe Book">📗</button>
+        <div id="furnaceInput" class="inv-slot" title="Input"></div>
+        <div id="furnaceFlameMeter" title="Burn Progress"><div id="furnaceFlameFill"></div></div>
+        <div id="furnaceFuel" class="inv-slot" title="Fuel"></div>
+        <div id="furnaceArrowMeter" title="Cook Progress"><div id="furnaceArrowFill"></div></div>
+        <div id="furnaceOutput" class="inv-slot" title="Output"></div>
+      </div>
+      <div id="furnaceInvRows">
+        <div class="inv-lbl">Inventory</div>
+        <div id="furnaceInvMain"></div>
+        <div id="furnaceHotbarRow" class="inv-row"></div>
+      </div>
+    </div>
+  </div>
+
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
