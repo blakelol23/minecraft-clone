@@ -92,7 +92,7 @@ window.__bcLoadingDone = loadingDone;
 
 async function loadChunk(rel, onDone) {
   const url = new URL(rel, import.meta.url);
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: "no-cache" });
   if (!res.ok) throw new Error(`Failed to load ${rel} (${res.status})`);
   const text = await res.text();
   onDone();
@@ -118,6 +118,16 @@ async function boot() {
   const parts = await Promise.all(jobs);
 
   setLoadingProgress(32, "Starting engine\u2026");
+
+  // Safety net: if boot() is still sitting on "Starting engine" after a
+  // while, the game code almost certainly finished (or is close) but the
+  // in-game window.__bcProgress calls never fired — e.g. a stale cached
+  // chunk file that predates those hooks. Let the person know rather than
+  // leaving them staring at a stuck bar with no explanation.
+  const stallTimer = setTimeout(() => {
+    if ($loadingStatus) $loadingStatus.textContent = "Still starting\u2026 this is taking longer than expected.";
+  }, 9000);
+
   const code = parts.join("\n");
   const runner = new Function(
     "THREE",
@@ -127,6 +137,15 @@ async function boot() {
   // textures, builds the block atlas, and generates the spawn chunk, and
   // calls window.__bcLoadingDone() right before starting the render loop.
   await runner(THREE);
+  clearTimeout(stallTimer);
+
+  // runner(THREE) only resolves once the whole game script has finished
+  // executing top-to-bottom, and animate() just kicks off
+  // requestAnimationFrame and returns immediately — so by the time we're
+  // here the game is genuinely running. Force the loading screen closed
+  // even if the in-game window.__bcLoadingDone() call above never fired,
+  // so a missing/stale hook can never leave the bar stuck.
+  loadingDone();
 }
 
 boot().catch((err) => {
