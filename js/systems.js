@@ -748,10 +748,10 @@ function updatePlayer(dt){
       const sinY=Math.sin(player.yaw),cosY=Math.cos(player.yaw);
       const sinP=Math.sin(player.pitch),cosP=Math.cos(player.pitch);
       let fx=0,fy=0,fz=0;
-      if(keys.has('w')){fx+=sinY*cosP;fy+=sinP;fz+=-cosY*cosP;}
-      if(keys.has('s')){fx-=sinY*cosP;fy-=sinP;fz-=-cosY*cosP;}
-      if(keys.has('a')){fx+=-cosY;fz+=-sinY;}
-      if(keys.has('d')){fx+=cosY;fz+=sinY;}
+      if(keys.has('w')){fx+=-sinY*cosP;fy+=sinP;fz+=-cosY*cosP;}
+      if(keys.has('s')){fx+=sinY*cosP;fy+=-sinP;fz+=cosY*cosP;}
+      if(keys.has('a')){fx+=-cosY;fz+=sinY;}
+      if(keys.has('d')){fx+=cosY;fz+=-sinY;}
       if(keys.has(' '))fy+=1;
       if(keys.has('shift'))fy-=1;
       const len=Math.sqrt(fx*fx+fy*fy+fz*fz)||1;
