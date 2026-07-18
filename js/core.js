@@ -360,7 +360,7 @@ const CHUNK_OCCLUSION_HORIZON_GROWTH=0.008;
 const CHUNK_OCCLUSION_NEAR_DIST_CHUNKS=3.3;
 const CHUNK_LOD_NEAR_DIST_CHUNKS=2.8;
 const CHUNK_LOD_FAR_DIST_CHUNKS=4.6;
-const ENABLE_CHUNK_OCCLUSION=BOOT_QUERY.get("chunkOcclusion")==="1";
+const ENABLE_CHUNK_OCCLUSION=BOOT_QUERY.get("chunkOcclusion")!=="0";
 const ENABLE_CHUNK_LOD=BOOT_QUERY.get("chunkLod")==="1";
 const _chunkOcclusionBins=new Float32Array(CHUNK_OCCLUSION_BINS);
 let _chunkOcclusionLastUpdate=-Infinity;
