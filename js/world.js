@@ -957,12 +957,28 @@ function getCol(x,z){
     bh+=cliffN*cliffMask*2.3;
   }
 
-  const height=Math.floor(THREE.MathUtils.clamp(_finite(bh,p.base),2,S.worldH-4));
+  let height=Math.floor(THREE.MathUtils.clamp(_finite(bh,p.base),2,S.worldH-4));
   const biomeShift=(fbm2((x+143)*.010,(z-217)*.010,2,.5,2.0,S.seed+76)-0.5);
   const temperature=_noise01(center.temperature+biomeShift*0.07,.5);
   const moisture=_noise01(center.moisture-biomeShift*0.06,.5);
   const riverStrength=_noise01(center.riverStrength,0);
   const land=_noise01(center.land,.5);
+
+  // The raw noise carve above often only dips terrain 1 block under the
+  // waterline — that reads as a puddle, not a river, and sometimes doesn't
+  // dip below the waterline at all, breaking the channel into gaps.
+  // Guarantee an actual channel depth anywhere the river band is active.
+  if(riverStrength>0.05){
+    const minDepth=2+Math.round(riverStrength*4); // ~2 blocks at the edges, up to ~6 at the core
+    height=Math.min(height,S.waterLevel-minDepth);
+  }
+  // Same story for inland ponds/depressions that aren't part of a river:
+  // a lone 1-block-deep dip is barely water. Give it real depth instead —
+  // gated on land>0.35 so this doesn't touch ocean coastline/beach shelves,
+  // which are supposed to shallow out gradually.
+  if(height===S.waterLevel-1&&land>0.35){
+    height=S.waterLevel-2;
+  }
 
   const beach=height<=S.waterLevel+2&&height>=S.waterLevel-2;
   const under=height<S.waterLevel-1;
