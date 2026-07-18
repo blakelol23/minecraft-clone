@@ -8,7 +8,6 @@
 function mkItem(id,count=1){return{id,count};}
 function slotId(s){return s?s.id:BLOCK.AIR;}
 function slotCt(s){return s?s.count:0;}
-const invSlots=new Array(27).fill(null);
 const hotbarSlots=new Array(9).fill(null);
 const craftSlots=new Array(4).fill(null);
 let craftResult=null;
