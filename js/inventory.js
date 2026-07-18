@@ -149,15 +149,15 @@ const f3={
 // Mob hitbox wireframe objects (LineSegments, one per mob, toggled by F3+B)
 const _mobHitboxWires=new Map(); // mob object → LineSegments
 const _hitboxGeo=new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1));
-const _hitboxMat=new THREE.LineBasicMaterial({color:0xff0000,depthTest:false,depthWrite:false,transparent:true,opacity:0.95});
-const _playerHitboxMat=new THREE.LineBasicMaterial({color:0xffff00,depthTest:false,depthWrite:false,transparent:true,opacity:0.95});
+const _hitboxMat=new THREE.LineBasicMaterial({color:0xff0000,depthTest:true,depthWrite:false,transparent:true,opacity:0.95});
+const _playerHitboxMat=new THREE.LineBasicMaterial({color:0xffff00,depthTest:true,depthWrite:false,transparent:true,opacity:0.95});
 const _playerHitboxWire=new THREE.LineSegments(
   new THREE.EdgesGeometry(new THREE.BoxGeometry(S.playerR*2,S.playerH,S.playerR*2)),
   _playerHitboxMat
 );
 _playerHitboxWire.visible=false;
 _playerHitboxWire.frustumCulled=false;
-_playerHitboxWire.renderOrder=999;
+_playerHitboxWire.renderOrder=1;
 scene.add(_playerHitboxWire);
 // Chunk border grid lines (F3+G)
 let _chunkBorderLines=null;
@@ -276,9 +276,11 @@ function updateF3Screen(){
   for(const [mob,wire] of _mobHitboxWires){
     if(!(mobs||[]).includes(mob)){scene.remove(wire);wire.geometry.dispose();_mobHitboxWires.delete(mob);}
   }
-  // Player hitbox
-  _playerHitboxWire.visible=showHB;
-  if(showHB)_playerHitboxWire.position.set(player.pos.x,player.pos.y+S.playerH*0.5,player.pos.z);
+  // Player hitbox — only meaningful in third/front person; in first person
+  // the camera sits inside it, so showing it there is just a red flash.
+  const showPlayerHB=showHB&&player.mode!=="first";
+  _playerHitboxWire.visible=showPlayerHB;
+  if(showPlayerHB)_playerHitboxWire.position.set(player.pos.x,player.pos.y+S.playerH*0.5,player.pos.z);
   // Rebuild chunk borders if player chunk changed
   if(f3.showChunkBorders){
     const ck2=`${Math.floor(player.pos.x/S.chunkSize)},${Math.floor(player.pos.z/S.chunkSize)}`;

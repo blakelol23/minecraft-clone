@@ -1818,6 +1818,20 @@ function spawnMobDeathParticles(x,y,z,count=16){
     scene.add(p);particles.push(p);
   }
 }
+function spawnCritParticles(x,y,z,count=8){
+  if(!GS.particles)return;
+  const col=0xffd23f;
+  if(!_partMatCache.has(col))_partMatCache.set(col,new THREE.MeshLambertMaterial({color:col}));
+  const mat=_partMatCache.get(col);
+  for(let i=0;i<count;i++){
+    const p=new THREE.Mesh(partGeo,mat);
+    p.position.set(x+(Math.random()-.5)*0.5,y+(Math.random()-.5)*0.3,z+(Math.random()-.5)*0.5);
+    p.userData.vel=new THREE.Vector3((Math.random()-.5)*1.4,1.2+Math.random()*1.6,(Math.random()-.5)*1.4);
+    p.userData.life=.32+Math.random()*.28;
+    p.userData.rs=new THREE.Vector3(Math.random()*10,Math.random()*10,Math.random()*10);
+    scene.add(p);particles.push(p);
+  }
+}
 function spawnParticles(x,y,z,bt){
   if(!GS.particles)return;
   const info=BLOCK_INFO[bt];
