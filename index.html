@@ -128,6 +128,20 @@
       user-select:none;
       pointer-events:none;
     }
+    .logo-wrap img.logo-hidden{display:none}
+    .logo-fallback{
+      display:none;
+      font-family:"Silkscreen","VT323",monospace;
+      font-size:clamp(2.4rem,7vw,4.6rem);
+      font-weight:700;
+      letter-spacing:.01em;
+      color:#fff;
+      text-shadow:4px 4px 0 rgba(0,0,0,.6);
+      user-select:none;
+      pointer-events:none;
+    }
+    .logo-fallback span{color:#7cc24a}
+    .logo-fallback.show{display:block}
 
     .splash{
       position:absolute;
@@ -707,7 +721,8 @@
 
   <main class="shell">
     <section class="logo-wrap" aria-label="BlockieCraft logo">
-      <img src="assets/BlockieCraftLogo.png" alt="BlockieCraft logo" />
+      <img id="logoImg" src="assets/BlockieCraftLogo.png" alt="BlockieCraft logo" loading="eager" fetchpriority="high" width="620" height="180" />
+      <div class="logo-fallback" id="logoFallback">Blockie<span>Craft</span></div>
       <div class="splash" id="splashText">Blocks barrel rolls!</div>
     </section>
 
@@ -838,8 +853,8 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <audio id="menuMusic" src="assets/menuaudio1.mp3" loop preload="auto"></audio>
-  <audio id="clickSfx" src="assets/click.mp3" preload="auto"></audio>
+  <audio id="menuMusic" src="assets/menuaudio1.mp3" loop preload="none"></audio>
+  <audio id="clickSfx" src="assets/click.mp3" preload="none"></audio>
 
   <script type="module">
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
@@ -950,6 +965,39 @@
     const packBtn=document.getElementById("packBtn");
     const menuMusic=document.getElementById("menuMusic");
     const clickSfx=document.getElementById("clickSfx");
+
+    // ── Logo: retry a couple of times (GitHub Pages assets can 503
+    // transiently), then fall back to a text logo instead of a broken image.
+    (function initLogo(){
+      const img=document.getElementById("logoImg");
+      const fallback=document.getElementById("logoFallback");
+      if(!img||!fallback)return;
+      const src=img.getAttribute("src");
+      let attempt=0;
+      const maxAttempts=3;
+      img.addEventListener("error",()=>{
+        attempt++;
+        if(attempt<maxAttempts){
+          setTimeout(()=>{img.src=`${src}?retry=${attempt}`;},600*attempt);
+        }else{
+          img.classList.add("logo-hidden");
+          fallback.classList.add("show");
+        }
+      });
+    })();
+
+    // ── Audio: once an asset has failed to load in this session, stop
+    // retrying it on every click — that's what was spamming 503s in the
+    // console. One more attempt is allowed after a short cooldown.
+    const audioFailState=new Map(); // element -> {failedAt}
+    const AUDIO_RETRY_COOLDOWN_MS=15000;
+    function audioRecentlyFailed(el){
+      const st=audioFailState.get(el);
+      return st&&(performance.now()-st.failedAt)<AUDIO_RETRY_COOLDOWN_MS;
+    }
+    function markAudioFailed(el){
+      audioFailState.set(el,{failedAt:performance.now()});
+    }
 
     let toastTimer=null;
     let helpVisible=false;
@@ -1501,6 +1549,7 @@
     }
 
     function onMusicUnlockGesture(){
+      if(audioRecentlyFailed(menuMusic))return;
       const p=menuMusic.play();
       if(p&&typeof p.then==="function"){
         p.then(()=>{
@@ -1510,7 +1559,7 @@
             musicUnlockArmed=false;
           }
           showToast("Menu music enabled.",1200);
-        }).catch(()=>{});
+        }).catch(()=>{markAudioFailed(menuMusic);});
       }else{
         musicStarted=true;
       }
@@ -1523,11 +1572,13 @@
     }
 
     function tryStartMenuMusic(){
+      if(audioRecentlyFailed(menuMusic))return;
       applyMenuMusicVolume();
       const p=menuMusic.play();
       if(p&&typeof p.then==="function"){
         p.then(()=>{musicStarted=true;}).catch(()=>{
           musicStarted=false;
+          markAudioFailed(menuMusic);
           armMusicUnlock();
         });
       }else{
@@ -1557,6 +1608,7 @@
         disarmClickSfxUnlock();
         return;
       }
+      if(audioRecentlyFailed(clickSfx))return;
 
       const s=getSettings();
       const volume=applyClickSfxVolume(s);
@@ -1574,7 +1626,7 @@
         disarmClickSfxUnlock();
       };
 
-      if(p&&typeof p.then==="function")p.then(onUnlocked).catch(()=>applyClickSfxVolume(s));
+      if(p&&typeof p.then==="function")p.then(onUnlocked).catch(()=>{markAudioFailed(clickSfx);applyClickSfxVolume(s);});
       else onUnlocked();
     }
 
@@ -1585,6 +1637,7 @@
     }
 
     function playClickSfx(){
+      if(audioRecentlyFailed(clickSfx))return;
       const s=getSettings();
       const volume=applyClickSfxVolume(s);
       if(volume<=0.001)return;
@@ -1597,7 +1650,7 @@
         p.then(()=>{
           clickSfxUnlocked=true;
           disarmClickSfxUnlock();
-        }).catch(()=>armClickSfxUnlock());
+        }).catch(()=>{markAudioFailed(clickSfx);armClickSfxUnlock();});
       }
     }
 
