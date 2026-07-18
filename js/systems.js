@@ -21,32 +21,38 @@ function animate(){
   const perfPressure=chunkQueuePressure()>8||lagDebug.lastFrameMs>22||frameStart<lagDebug.startupUntil;
   const timings={};
   updateFpsCounter(dt);
+  const frozen=f3.frustumCaptured;
   const shadowInterval=perfPressure?0.96:SHADOW_UPDATE_INTERVAL;
-  if(clock.elapsedTime-lastShadowUpdate>=shadowInterval){renderer.shadowMap.needsUpdate=true;lastShadowUpdate=clock.elapsedTime;}
+  if(!frozen&&clock.elapsedTime-lastShadowUpdate>=shadowInterval){renderer.shadowMap.needsUpdate=true;lastShadowUpdate=clock.elapsedTime;}
   let mark=performance.now();
-  updateDayNight(dt);updateClouds(dt);updateRain(dt);updateTorchFlicker(clock.elapsedTime);processGenQueue();
-  if(!window._freezeWater&&waterMergeMat&&waterMergeMat.userData.shader)
-    waterMergeMat.userData.shader.uniforms.uWaterTime.value+=dt*1.42;
+  if(!frozen){
+    updateDayNight(dt);updateClouds(dt);updateRain(dt);updateTorchFlicker(clock.elapsedTime);processGenQueue();
+    if(!window._freezeWater&&waterMergeMat&&waterMergeMat.userData.shader)
+      waterMergeMat.userData.shader.uniforms.uWaterTime.value+=dt*1.42;
+  }
   timings.world=performance.now()-mark;
   mark=performance.now();
-  updatePlayer(motionDt);streamChunks();
+  updatePlayer(motionDt);if(!frozen)streamChunks();
   timings.player=performance.now()-mark;
   mark=performance.now();
-  doRaycast();doBreaking(dt);updateWater(dt);updateFurnaces(dt);
+  if(!frozen){doRaycast();doBreaking(dt);updateWater(dt);updateFurnaces(dt);}
   timings.interact=performance.now()-mark;
   mark=performance.now();
-  if(!perfPressure||(_frameSerial&1)===0){
-    updateParticles(dt);updateDropItems(dt);updateMobs(dt);
-  }else{
-    updateMobs(Math.min(dt,0.012));
+  if(!frozen){
+    if(!perfPressure||(_frameSerial&1)===0){
+      updateParticles(dt);updateDropItems(dt);updateMobs(dt);
+    }else{
+      updateMobs(Math.min(dt,0.012));
+    }
   }
   animatePlayerModel(motionDt);updateFPArm(motionDt);
   timings.anim=performance.now()-mark;
   mark=performance.now();
-  updateCamera(motionDt);updateStats();animateChunks();flushDirty();
+  updateCamera(motionDt);updateStats();animateChunks();if(!frozen)flushDirty();
   timings.camera=performance.now()-mark;
   mark=performance.now();
-  updateLeafDecay(dt);updateStatusBars();updateHudOverlays();updateChatLog();updateF3Screen();updateNameTags();
+  if(!frozen)updateLeafDecay(dt);
+  updateStatusBars();updateHudOverlays();updateChatLog();updateF3Screen();updateNameTags();
   if(furnaceOpen)refreshFurnaceUI();
   timings.ui=performance.now()-mark;
   mark=performance.now();
@@ -492,6 +498,11 @@ function _handleF3Combo(k){
       f3.pauseOnLostFocus=!f3.pauseOnLostFocus;
       showMsg('Pause on focus loss '+(f3.pauseOnLostFocus?'ON':'OFF'),1200);
       break;
+    case'f':
+      // F3+F = capture frustum: freezes ticks/culling and drops into noclip
+      // freecam so you can fly out and see what's being culled behind you
+      toggleCapturedFrustum();
+      break;
     case'q':
       // F3+Q = show key help overlay
       $f3Overlay.innerHTML=
@@ -502,6 +513,7 @@ function _handleF3Combo(k){
         'F3+H — Toggle advanced tooltips<br>'+
         'F3+A — Reload chunks<br>'+
         'F3+P — Toggle pause on focus loss<br>'+
+        'F3+F — Capture frustum (freeze + freecam)<br>'+
         'F3+Q — Show this help';
       $f3Overlay.classList.add('show');
       setTimeout(()=>$f3Overlay.classList.remove('show'),4000);

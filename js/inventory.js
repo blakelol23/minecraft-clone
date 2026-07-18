@@ -141,6 +141,7 @@ const f3={
   showChunkBorders:false, // F3+G (chunk grid lines)
   reducedDebug:false,  // F3+H (toggle advanced tooltips — visual only here)
   pauseOnLostFocus:true, // F3+P
+  frustumCaptured:false, // F3+F — capture frustum + freeze ticks (like MC's "Captured frustum")
   _lastUpdate:0,
   _pendingCombo:null,  // key waiting for combo (set when F3 is held)
   _comboCd:0,
@@ -181,6 +182,71 @@ function _buildChunkBorderLines(){
   geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
   _chunkBorderLines=new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0xff00ff,transparent:true,opacity:0.5,depthTest:false}));
   scene.add(_chunkBorderLines);
+}
+// ── Captured Frustum debug (F3+F) ───────────────────────────────────────────
+// Minecraft-style "[Debug]: Captured frustum": freezes ticks + culling in
+// place, drops the player into noclip freecam so they can fly out and see
+// exactly which chunks the culling pipeline decided were on/off screen.
+let _capturedFrustumGroup=null;
+let _freecamPrevNoclip=false;
+function _buildCapturedFrustumWire(cam){
+  const ndc=[
+    [-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1], // near rect
+    [-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]      // far rect
+  ];
+  const invProj=new THREE.Matrix4().copy(cam.projectionMatrix).invert();
+  const pts=ndc.map(([x,y,z])=>{
+    const v=new THREE.Vector3(x,y,z).applyMatrix4(invProj);
+    v.applyMatrix4(cam.matrixWorld);
+    return v;
+  });
+  const edges=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const verts=[];
+  for(const[a,b] of edges)verts.push(pts[a].x,pts[a].y,pts[a].z,pts[b].x,pts[b].y,pts[b].z);
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  const wire=new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x33e0ff,transparent:true,opacity:0.85,depthTest:false}));
+  wire.frustumCulled=false;wire.renderOrder=999;
+  return wire;
+}
+function _buildCapturedChunkBoxes(){
+  const group=new THREE.Group();
+  for(const c of chunkMap.values()){
+    if(!c.grp)continue;
+    const ox=c.cx*S.chunkSize,oz=c.cz*S.chunkSize;
+    const topY=Math.min(S.worldH,(Number.isFinite(c.topY)?c.topY:S.worldH)+4);
+    const visible=isChunkVisible(c);
+    const geo=new THREE.EdgesGeometry(new THREE.BoxGeometry(S.chunkSize,Math.max(topY,1),S.chunkSize));
+    const mat=new THREE.LineBasicMaterial({
+      color:visible?0x33ff55:0xff3333,
+      transparent:true,opacity:visible?0.28:0.85,depthTest:false
+    });
+    const box=new THREE.LineSegments(geo,mat);
+    box.position.set(ox+S.chunkSize/2,topY/2,oz+S.chunkSize/2);
+    box.frustumCulled=false;box.renderOrder=998;
+    group.add(box);
+  }
+  return group;
+}
+function toggleCapturedFrustum(){
+  f3.frustumCaptured=!f3.frustumCaptured;
+  if(f3.frustumCaptured){
+    _capturedFrustumGroup=new THREE.Group();
+    _capturedFrustumGroup.add(_buildCapturedFrustumWire(camera));
+    _capturedFrustumGroup.add(_buildCapturedChunkBoxes());
+    scene.add(_capturedFrustumGroup);
+    _freecamPrevNoclip=!!player.noclip;
+    player.noclip=true;
+    showMsg('[Debug]: Captured frustum',1600);
+  }else{
+    if(_capturedFrustumGroup){
+      scene.remove(_capturedFrustumGroup);
+      _capturedFrustumGroup.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});
+      _capturedFrustumGroup=null;
+    }
+    player.noclip=_freecamPrevNoclip;
+    showMsg('[Debug]: Cleared captured frustum',1200);
+  }
 }
 const $f3Screen=document.getElementById('f3Screen');
 const $f3Left=document.getElementById('f3Left');
@@ -260,7 +326,8 @@ function updateF3Screen(){
     `<div>F3+B: Hitboxes ${f3.showHitboxes?'<b style="color:#55ff55">ON</b>':'OFF'}</div>`+
     `<div>F3+G: Chunk Grid ${f3.showChunkBorders?'<b style="color:#55ff55">ON</b>':'OFF'}</div>`+
     `<div>F3+H: Adv.Tooltips ${f3.reducedDebug?'<b style="color:#55ff55">ON</b>':'OFF'}</div>`+
-    `<div>F3+P: Pause on focus loss ${f3.pauseOnLostFocus?'<b style="color:#55ff55">ON</b>':'OFF'}</div>`;
+    `<div>F3+P: Pause on focus loss ${f3.pauseOnLostFocus?'<b style="color:#55ff55">ON</b>':'OFF'}</div>`+
+    `<div>F3+F: Captured Frustum ${f3.frustumCaptured?'<b style="color:#33e0ff">ON (ticks frozen)</b>':'OFF'}</div>`;
 }
 // Double-tap W sprint tracking
 let _lastWTap=0,_sprintReleaseTimer=null;

@@ -725,9 +725,11 @@ function applyChunkLod(c,tier){
 }
 
 function animateChunks(){
-  _frustumMat.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
-  _frustum.setFromProjectionMatrix(_frustumMat);
-  updateChunkOcclusion(performance.now());
+  if(!f3.frustumCaptured){
+    _frustumMat.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
+    _frustum.setFromProjectionMatrix(_frustumMat);
+    updateChunkOcclusion(performance.now());
+  }
   for(const c of chunkMap.values()){
     if(!c.grp)continue;
     if(!c.animDone){
