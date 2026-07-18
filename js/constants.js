@@ -28,7 +28,7 @@ const TOOL={WOOD_PICK:100,STONE_PICK:101,WOOD_AXE:102,STONE_AXE:103,WOOD_SHOVEL:
 const ITEM={STICK:200,WATER_SOURCE:201,APPLE:202,BREAD:203,COOKED_PORKCHOP:204,
             RAW_MEAT:209,COAL:205,IRON_INGOT:206,GOLD_INGOT:207,DIAMOND:208};
 const S={
-  seed:48151623,chunkSize:16,worldH:64,waterLevel:21,
+  seed:48151623,chunkSize:16,worldH:64,waterLevel:22,
   worldPreset:"balanced",
   renderDist:3,reach:8,
   gravity:32,walkSpeed:4.317,sprintSpeed:5.612,sneakSpeed:1.295,jumpVel:9.0,
