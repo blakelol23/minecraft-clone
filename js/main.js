@@ -63,11 +63,15 @@ function setLoadingProgress(pct, label) {
   if (label && $loadingStatus) $loadingStatus.textContent = label;
 }
 
-function loadingFailed(message) {
+function loadingFailed(message, network) {
   stopLoadingTips();
   if ($loading) $loading.classList.add("error");
   if ($loadingStatus) $loadingStatus.textContent = message;
-  if ($loadingTip) $loadingTip.textContent = "Reload the page to try again.";
+  if ($loadingTip) {
+    $loadingTip.textContent = network
+      ? "Reload the page to try again."
+      : "This is a bug in the game code, not a connection issue — open the browser console (F12) for the full stack trace.";
+  }
 }
 
 function loadingDone() {
@@ -148,19 +152,41 @@ async function boot() {
   loadingDone();
 }
 
+/** Turn a caught boot() error into an accurate, specific status line — no guessing. */
+function describeBootError(err) {
+  const message = String((err && err.message) || err || "Unknown error");
+  const name = err && err.name ? err.name : "Error";
+
+  // A chunk failed to download (loadChunk() throws exactly this shape).
+  const fetchMatch = /^Failed to load (\S+) \((\d+)\)$/.exec(message);
+  if (fetchMatch) {
+    return { status: `Couldn't download ${fetchMatch[1]} (HTTP ${fetchMatch[2]}) — check the file exists at that path.`, network: true };
+  }
+  // Browser-level network failure (offline, blocked, CORS, DNS, etc).
+  if (name === "TypeError" && /fetch|NetworkError|Load failed/i.test(message)) {
+    return { status: `Network error while downloading game files: ${message}`, network: true };
+  }
+  // The concatenated game code itself doesn't parse — almost always a
+  // duplicated or corrupted local file (e.g. two chunks both declaring the
+  // same top-level const/let), not a "serve over http" problem.
+  if (name === "SyntaxError") {
+    return { status: `Script error (SyntaxError): ${message} — one of the game .js files has invalid or duplicated code. Check the browser console for the exact line.`, network: false };
+  }
+  // WebGL genuinely unavailable (three.js throws a message naming it).
+  if (/WebGL/i.test(message)) {
+    return { status: `WebGL unavailable: ${message}`, network: false };
+  }
+  // Anything else: a real runtime error inside the game code once it started running.
+  return { status: `${name}: ${message}`, network: false };
+}
+
 boot().catch((err) => {
   console.error("[BlockieCraft] boot failed", err);
-  const webgl = String((err && err.message) || err).includes("WebGL");
-  loadingFailed(
-    webgl
-      ? "WebGL unavailable in this environment."
-      : "Failed to load game scripts — serve over http:// (not file://)."
-  );
+  const { status, network } = describeBootError(err);
+  loadingFailed(status, network);
   const msg = document.getElementById("centerMsg");
   if (msg) {
-    msg.textContent = webgl
-      ? "WebGL unavailable in this environment."
-      : "Failed to load game scripts — serve over http:// (not file://).";
+    msg.textContent = status;
     msg.classList.add("show");
   }
 });
