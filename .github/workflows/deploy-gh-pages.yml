@@ -18,7 +18,7 @@ jobs:
         run: |
           rm -rf public
           mkdir public
-          cp -r blue/* public/
+          cp -r css js *.html public/
           if [ -f CNAME ]; then cp CNAME public/; fi
 
       - name: Deploy to gh-pages
