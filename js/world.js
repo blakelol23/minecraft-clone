@@ -860,6 +860,30 @@ function trimColCache(){
     if(dropped>=dropCount)break;
   }
 }
+// ═══════════════════════════════
+//  TERRAIN + WATER GENERATION — how oceans/rivers/lakes end up "already there"
+// ═══════════════════════════════
+// Like most voxel world generators, water here isn't simulated flowing
+// downhill — it's placed procedurally in a fixed pipeline, chunk by chunk,
+// before the player ever sees the area. Four phases, all in this file:
+//
+//  1) Base elevation — sampleTerrainPoint() below layers 2D simplex/value
+//     noise (continents, hills, ridges, erosion, river bands) into a single
+//     raw height per (x,z) column.
+//  2) Sea-level check — getCol() takes that raw height, smooths/warps it,
+//     and compares it against S.waterLevel (constants.js) to classify the
+//     column as ocean / river / beach / dry land and pick a biome.
+//  3) Water placement — genBlock() fills every column whose height sits
+//     below S.waterLevel with static BLOCK.WATER up to the waterline, in
+//     the same pass that emits stone/dirt/sand — oceans, riverbeds, and
+//     pond depressions all come from this one check.
+//  4) Underground pockets — the 3D fbm3/rn3 noise cave carving in
+//     genBlock() plays the role of aquifers/underground lakes: caverns that
+//     dip low enough just read as open air (no separate flood pass here,
+//     but it's the same "does this pocket sit under the water table" idea).
+//
+// All of this runs during chunk generation (createChunkJob/advanceChunkJob
+// above), so it's fully resolved by the time a chunk is meshed and shown.
 function sampleTerrainPoint(x,z,p,includeClimate=true){
   const warpA=_noise01(fbm2(x*p.warpFreq,z*p.warpFreq,2,.5,2.0,S.seed+901))-.5;
   const warpB=_noise01(fbm2((x+337)*p.warpFreq,(z-211)*p.warpFreq,2,.5,2.0,S.seed+902))-.5;
@@ -968,15 +992,27 @@ function getCol(x,z){
   // waterline — that reads as a puddle, not a river, and sometimes doesn't
   // dip below the waterline at all, breaking the channel into gaps.
   // Guarantee an actual channel depth anywhere the river band is active.
+  // IMPORTANT: minDepth must vary continuously with riverStrength — an
+  // earlier version rounded it to whole blocks (Math.round(riverStrength*4)),
+  // which turned a smoothly-varying riverbed into flat integer terraces
+  // (a visible staircase/checkerboard across the channel). The Math.min
+  // below is still a hard floor, but now the floor itself slopes smoothly
+  // from bank to core instead of jumping in 1-block steps.
   if(riverStrength>0.05){
-    const minDepth=2+Math.round(riverStrength*4); // ~2 blocks at the edges, up to ~6 at the core
-    height=Math.min(height,S.waterLevel-minDepth);
+    const minDepth=2+riverStrength*4; // ~2 blocks at the edges, up to ~6 at the core, continuous
+    height=Math.min(height,Math.floor(S.waterLevel-minDepth));
   }
   // Same story for inland ponds/depressions that aren't part of a river:
   // a lone 1-block-deep dip is barely water. Give it real depth instead —
   // gated on land>0.35 so this doesn't touch ocean coastline/beach shelves,
   // which are supposed to shallow out gradually.
-  if(height===S.waterLevel-1&&land>0.35){
+  // IMPORTANT: the old check only fired when height landed on the *exact*
+  // integer S.waterLevel-1, so it hit isolated columns with no relation to
+  // their neighbors — a scattered, punctual override that shows up as
+  // random single-block pits (checkerboard) rather than a real pond basin.
+  // Widen it to a small band so it catches every shallow dip, not just the
+  // one lucky integer.
+  if(height>=S.waterLevel-2&&height<=S.waterLevel-1&&land>0.35){
     height=S.waterLevel-2;
   }
 
