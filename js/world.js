@@ -783,12 +783,23 @@ function genBlock(x,y,z){
   // Cave carving uses a surface buffer so terrain tops stay intact and less "holey".
   const roofBuffer=4+(col.height<=S.waterLevel+4?2:0);
   if(y>=2&&y<col.height-roofBuffer&&col.height>S.waterLevel+1){
-    const caveA=fbm3((x+19)*.046,(y-7)*.074,(z-31)*.046,3,.52,2.0,S.seed+300);
-    const caveB=rn3((x-53)*.052,(y+13)*.082,(z+41)*.052,S.seed+301);
-    const caveN=caveA*0.72+caveB*0.28;
-    const depthNorm=THREE.MathUtils.clamp((col.height-y)/(S.worldH*0.42),0,1);
-    const caveThreshold=0.17+depthNorm*0.13+(y<11?0.03:0);
-    if(caveN<caveThreshold)return BLOCK.AIR;
+    // Region gate: without this, the depth-based threshold below rises to
+    // ~1-in-3 for every (x,z) column near bedrock, with nothing to cluster
+    // that hollow space into contiguous cave systems. On unlucky seeds the
+    // correlated 3D noise can then string together a low patch that spans
+    // most of a column's height at many scattered locations at once,
+    // reading as "vertical shafts everywhere" instead of the occasional
+    // cave. This coarse, low-frequency 2D mask confines caves to broad
+    // pockets (like real cave biomes) so most of the map has none.
+    const caveRegion=fbm2((x+211)*.0075,(z-133)*.0075,2,.5,2.0,S.seed+340);
+    if(caveRegion>0.44){
+      const caveA=fbm3((x+19)*.046,(y-7)*.074,(z-31)*.046,3,.52,2.0,S.seed+300);
+      const caveB=rn3((x-53)*.052,(y+13)*.082,(z+41)*.052,S.seed+301);
+      const caveN=caveA*0.72+caveB*0.28;
+      const depthNorm=THREE.MathUtils.clamp((col.height-y)/(S.worldH*0.42),0,1);
+      const caveThreshold=0.15+depthNorm*0.09+(y<11?0.02:0); // capped lower — was reaching ~0.33 at max depth
+      if(caveN<caveThreshold)return BLOCK.AIR;
+    }
   }
 
   // Underwater sediment is intentionally tiny and sparse to avoid seabed carpets.
