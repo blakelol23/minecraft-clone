@@ -1,12 +1,3435 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="refresh" content="0; url=./blue/game.html">
-    <meta name="robots" content="index,follow">
-    <title>Redirecting…</title>
-  </head>
-  <body>
-    Redirecting to <a href="./game.html">game</a>.
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BlockieCraft Main Menu</title>
+  <link rel="icon" type="image/x-icon" href="assets/fav.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --ui-bg:#6f747c;
+      --ui-bg-dark:#565b64;
+      --ui-border-light:#a4a8af;
+      --ui-border-dark:#272b31;
+      --ui-text:#f2f4f6;
+      --ui-shadow:#000;
+      --gold:#f3ea4a;
+      --line:#9ba3ad;
+      --panel-fill:#1d2228;
+      --panel-fill-2:#13171c;
+    }
+
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden}
+
+    body{
+      font-family:"Silkscreen", monospace;
+      color:var(--ui-text);
+      background:#0f151c;
+    }
+
+    #bgCanvas{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+      z-index:0;
+      pointer-events:none;
+      transition:opacity 140ms ease;
+    }
+
+    .vignette{
+      position:fixed;
+      inset:0;
+      z-index:1;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 50% 44%, rgba(0,0,0,0) 26%, rgba(0,0,0,0.48) 100%),
+        linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.22));
+    }
+
+    .scanline{
+      position:fixed;
+      inset:0;
+      z-index:2;
+      pointer-events:none;
+      background:repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,0.014) 0,
+        rgba(255,255,255,0.014) 1px,
+        rgba(0,0,0,0) 1px,
+        rgba(0,0,0,0) 3px
+      );
+    }
+
+    .top-row{
+      position:fixed;
+      top:12px;
+      left:12px;
+      right:12px;
+      z-index:5;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .menu-list-btn{
+      min-width:130px;
+      font-size:12px;
+      padding:8px 10px;
+    }
+
+    .corner-icons{display:flex;gap:8px}
+
+    .icon-btn{
+      width:46px;
+      height:44px;
+      font-size:11px;
+      padding:0;
+      display:grid;
+      place-items:center;
+    }
+
+    .shell{
+      position:relative;
+      z-index:4;
+      height:100%;
+      width:min(860px, 100vw);
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding:60px 12px 26px;
+      gap:26px;
+    }
+
+    .logo-wrap{
+      position:relative;
+      width:min(700px, 94vw);
+      margin-top:-2px;
+      margin-bottom:14px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      animation:logoIn 420ms ease-out;
+    }
+
+    .logo-wrap img{
+      width:min(620px, 92vw);
+      max-height:29vh;
+      object-fit:contain;
+      image-rendering:pixelated;
+      filter:brightness(0.68) drop-shadow(0 6px 0 rgba(0,0,0,0.68)) drop-shadow(0 15px 24px rgba(0,0,0,0.48));
+      user-select:none;
+      pointer-events:none;
+    }
+
+    .splash{
+      position:absolute;
+      right:-1.5%;
+      bottom:30px;
+      color:var(--gold);
+      font-size:clamp(11px, 1.55vw, 18px);
+      text-shadow:2px 2px 0 #3f3704;
+      transform-origin:85% 60%;
+      white-space:nowrap;
+      transform:translate3d(0,0,0) rotate(-15deg) scale(1);
+      will-change:transform;
+      backface-visibility:hidden;
+      animation:splashWave 2.35s cubic-bezier(0.33,0,0.18,1) infinite;
+    }
+
+    .menu-column{
+      width:min(486px, 94vw);
+      margin-top:64px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      animation:menuIn 650ms ease-out;
+    }
+
+    .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+    .mc-btn{
+      appearance:none;
+      --btn-hi:var(--ui-border-light);
+      --btn-lo:var(--ui-border-dark);
+      --btn-frame:#1b1f25;
+      --btn-corner:#090b0e;
+      border:0;
+      background:linear-gradient(180deg, var(--ui-bg), var(--ui-bg-dark));
+      color:var(--ui-text);
+      font-family:"Silkscreen", monospace;
+      font-size:13px;
+      letter-spacing:0.2px;
+      padding:12px 10px;
+      text-shadow:1px 1px 0 var(--ui-shadow);
+      cursor:pointer;
+      transition:filter 90ms, transform 70ms;
+      position:relative;
+      overflow:hidden;
+      clip-path:polygon(
+        2px 0,
+        calc(100% - 2px) 0,
+        calc(100% - 2px) 2px,
+        100% 2px,
+        100% calc(100% - 2px),
+        calc(100% - 2px) calc(100% - 2px),
+        calc(100% - 2px) 100%,
+        2px 100%,
+        2px calc(100% - 2px),
+        0 calc(100% - 2px),
+        0 2px,
+        2px 2px
+      );
+      box-shadow:
+        inset 0 2px 0 var(--btn-hi),
+        inset 2px 0 0 var(--btn-hi),
+        inset 0 -2px 0 var(--btn-lo),
+        inset -2px 0 0 var(--btn-lo),
+        0 0 0 2px var(--btn-frame),
+        0 0 0 4px var(--btn-corner);
+    }
+
+    .mc-btn::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(var(--btn-corner),var(--btn-corner)) left top/2px 2px no-repeat,
+        linear-gradient(var(--btn-corner),var(--btn-corner)) right top/2px 2px no-repeat,
+        linear-gradient(var(--btn-corner),var(--btn-corner)) left bottom/2px 2px no-repeat,
+        linear-gradient(var(--btn-corner),var(--btn-corner)) right bottom/2px 2px no-repeat;
+    }
+
+    .mc-btn::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0));
+      opacity:0.6;
+      pointer-events:none;
+    }
+
+    .mc-btn:hover{filter:brightness(1.06) saturate(1.04)}
+    .mc-btn:active{transform:translateY(1px);filter:brightness(0.95)}
+
+    .mc-btn.primary{
+      --btn-hi:#c8dbba;
+      --btn-lo:#33502d;
+      --btn-frame:#1f3a1a;
+      --btn-corner:#0e170c;
+      background:linear-gradient(180deg, #8cae77, #6f925f);
+    }
+
+    .mc-btn.warn{
+      --btn-hi:#caa79a;
+      --btn-lo:#5f3c31;
+      --btn-frame:#4a2f27;
+      --btn-corner:#1f1411;
+      background:linear-gradient(180deg, #9e7264, #845a4d);
+    }
+
+    .menu-column .mc-btn:nth-child(1){animation:btnIn 300ms ease-out both 130ms}
+    .menu-column .mc-btn:nth-child(2){animation:btnIn 300ms ease-out both 200ms}
+    .menu-column .mc-btn:nth-child(3){animation:btnIn 300ms ease-out both 270ms}
+    .menu-column .pair{animation:btnIn 300ms ease-out both 340ms}
+
+    .help-box{
+      width:min(486px, 94vw);
+      min-height:44px;
+      padding:8px 10px;
+      font-family:"VT323", monospace;
+      font-size:27px;
+      line-height:1.1;
+      color:#d5dde7;
+      text-align:center;
+      text-shadow:1px 1px 0 rgba(0,0,0,0.75);
+      background:rgba(19,22,27,0.56);
+      border:1px solid rgba(181,189,198,0.24);
+      opacity:0;
+      transform:translateY(6px);
+      transition:opacity 150ms, transform 150ms;
+      pointer-events:none;
+    }
+
+    .help-box.show{opacity:1;transform:translateY(0)}
+
+    .footer-left,
+    .footer-right{
+      position:fixed;
+      bottom:10px;
+      z-index:5;
+      font-size:11px;
+      text-shadow:1px 1px 0 #000;
+      color:#e4e8ec;
+      opacity:0.9;
+    }
+
+    .footer-left{left:10px}
+    .footer-right{right:10px}
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:7;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:radial-gradient(circle at center, rgba(58,70,82,0.24), rgba(10,12,14,0.84));
+      padding:12px;
+    }
+
+    .overlay.open{display:flex}
+
+    .panel-card{
+      width:min(560px, 100%);
+      background:linear-gradient(180deg, #2a2e35, #1b1f24);
+      border:2px solid #11151a;
+      border-top-color:#858b94;
+      border-left-color:#858b94;
+      border-right-color:#1a1f24;
+      border-bottom-color:#1a1f24;
+      box-shadow:0 16px 34px rgba(0,0,0,0.56);
+      padding:12px;
+      animation:panelIn 150ms ease-out;
+    }
+
+    .panel-card.world-select-card{width:min(740px, 100%)}
+
+    #worldSelectOverlay{
+      z-index:12;
+      padding:0;
+      background:
+        radial-gradient(circle at 22% 8%, rgba(255,255,255,0.11), rgba(255,255,255,0) 42%),
+        repeating-linear-gradient(45deg, #2a2118 0 8px, #241c14 8px 16px),
+        repeating-linear-gradient(-45deg, #20190f 0 8px, #261e15 8px 16px);
+    }
+
+    #worldSelectOverlay.open{display:block}
+
+    #worldSelectOverlay::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.44) 0 128px, rgba(0,0,0,0) 128px calc(100% - 132px), rgba(0,0,0,0.44) calc(100% - 132px) 100%),
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0)) top/100% 120px no-repeat;
+      z-index:0;
+    }
+
+    .singleplayer-screen{
+      height:100%;
+      width:min(980px,100%);
+      margin:0 auto;
+      padding:16px 18px 16px;
+      display:grid;
+      grid-template-rows:auto auto minmax(250px,1fr) auto auto;
+      gap:8px;
+      position:relative;
+      z-index:1;
+      animation:panelIn 110ms ease-out;
+    }
+
+    .singleplayer-title{
+      margin:0;
+      text-align:center;
+      font-size:22px;
+      color:#f1f3f6;
+      text-shadow:3px 3px 0 #000;
+      letter-spacing:0.3px;
+    }
+
+    .singleplayer-searchbar{
+      height:60px;
+      width:min(590px, 88vw);
+      margin:0 auto;
+      border:3px solid #efefef;
+      background:#000;
+      box-shadow:inset 0 0 0 2px #1d1d1d, 0 2px 0 rgba(0,0,0,0.55);
+    }
+
+    #worldSelectOverlay .world-list{
+      min-height:0;
+      max-height:none;
+      margin:0;
+      padding:8px 10px;
+      border-top:2px solid rgba(0,0,0,0.80);
+      border-bottom:2px solid rgba(0,0,0,0.80);
+      background:rgba(0,0,0,0.58);
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      overflow-y:auto;
+    }
+
+    #worldSelectOverlay .world-row{
+      width:min(860px,100%);
+      margin:0 auto;
+      text-align:left;
+      background:rgba(0,0,0,0.18);
+      border:2px solid transparent;
+      color:#eef2f6;
+      padding:7px 8px;
+      cursor:pointer;
+      font-family:"Silkscreen", monospace;
+      display:grid;
+      grid-template-columns:64px 1fr;
+      gap:10px;
+      align-items:center;
+      box-shadow:none;
+    }
+
+    #worldSelectOverlay .world-row:hover{background:rgba(255,255,255,0.08)}
+
+    #worldSelectOverlay .world-row.active{
+      background:rgba(131,136,145,0.35);
+      border-color:#f3f4f6;
+    }
+
+    .world-thumb{
+      width:64px;
+      height:48px;
+      border:1px solid #0b0b0b;
+      background:#11161b;
+      padding:1px;
+      position:relative;
+      image-rendering:pixelated;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.09),
+        inset 0 0 10px rgba(0,0,0,0.32),
+        0 1px 0 rgba(255,255,255,0.12);
+    }
+
+    .world-thumb-img{
+      display:block;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      image-rendering:pixelated;
+      filter:contrast(1.04) saturate(1.07);
+    }
+
+    #worldSelectOverlay .world-row.active .world-thumb-img{
+      filter:contrast(1.12) saturate(1.14);
+    }
+
+    .world-info{min-width:0}
+
+    #worldSelectOverlay .world-name{
+      font-size:15px;
+      line-height:1.1;
+      color:#f1f2f5;
+      text-shadow:2px 2px 0 #000;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    #worldSelectOverlay .world-meta,
+    .world-submeta{
+      margin-top:3px;
+      font-family:"Silkscreen", monospace;
+      font-size:12px;
+      line-height:1.15;
+      color:#8f96a1;
+      text-shadow:1px 1px 0 #000;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .world-submeta{color:#a6adb8}
+
+    #worldSelectOverlay .empty-worlds{
+      min-height:100%;
+      border:0;
+      background:transparent;
+      color:#d2d6de;
+      font-size:34px;
+      text-shadow:2px 2px 0 #000;
+    }
+
+    .singleplayer-actions-top{
+      width:min(880px,100%);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .singleplayer-actions-bottom{
+      width:min(880px,100%);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+
+    #worldSelectOverlay .singleplayer-actions-top .mc-btn{height:54px;font-size:16px}
+    #worldSelectOverlay .singleplayer-actions-bottom .mc-btn{height:48px;font-size:14px}
+
+    #worldSelectOverlay .singleplayer-actions-top .mc-btn::after,
+    #worldSelectOverlay .singleplayer-actions-bottom .mc-btn::after{
+      opacity:0.32;
+    }
+
+    .world-list{
+      min-height:246px;
+      max-height:min(52vh, 420px);
+      overflow-y:auto;
+      padding:6px;
+      margin-bottom:10px;
+      border:2px solid #0f1318;
+      border-top-color:#54606b;
+      border-left-color:#54606b;
+      border-right-color:#1d252d;
+      border-bottom-color:#1d252d;
+      background:#0f1419;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .world-row{
+      width:100%;
+      text-align:left;
+      background:linear-gradient(180deg, #3a4048, #2e333a);
+      border:2px solid #20242a;
+      border-top-color:#7b848f;
+      border-left-color:#7b848f;
+      border-right-color:#1e2329;
+      border-bottom-color:#1e2329;
+      color:#eef2f6;
+      padding:8px 10px;
+      cursor:pointer;
+      font-family:"Silkscreen", monospace;
+    }
+
+    .world-row.active{
+      background:linear-gradient(180deg, #6f925f, #5d7f50);
+      border-top-color:#c8dbba;
+      border-left-color:#c8dbba;
+      border-right-color:#33502d;
+      border-bottom-color:#33502d;
+    }
+
+    .world-name{font-size:12px;color:#f3f6fa;text-shadow:1px 1px 0 #000}
+
+    .world-meta{
+      margin-top:2px;
+      font-family:"VT323", monospace;
+      font-size:24px;
+      line-height:1;
+      color:#b9c8da;
+      text-shadow:1px 1px 0 #000;
+    }
+
+    .empty-worlds{
+      min-height:226px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      white-space:pre-line;
+      color:#b7c5d7;
+      font-family:"VT323", monospace;
+      font-size:30px;
+      line-height:0.95;
+      text-shadow:1px 1px 0 #000;
+      padding:16px;
+    }
+
+    .panel-title{
+      margin:0 0 10px;
+      text-align:center;
+      font-size:15px;
+      color:#f1f3f5;
+      text-shadow:1px 1px 0 #000;
+    }
+
+    .field{margin-bottom:9px}
+
+    .field label{
+      display:block;
+      margin-bottom:3px;
+      font-size:13px;
+      color:#d9dde2;
+      text-shadow:1px 1px 0 #000;
+    }
+
+    .field input,
+    .field select{
+      width:100%;
+      background:#12161b;
+      color:#f1f4f7;
+      border:2px solid #0a0e12;
+      border-top-color:#59626c;
+      border-left-color:#59626c;
+      border-right-color:#1d252d;
+      border-bottom-color:#1d252d;
+      font-family:"VT323", monospace;
+      font-size:29px;
+      line-height:1;
+      padding:7px 9px;
+      outline:none;
+    }
+
+    .field input:focus,
+    .field select:focus{filter:brightness(1.07)}
+
+    .field.range input{padding:0}
+    .field.range .range-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+    .field.range .range-val{font-family:"VT323", monospace;font-size:28px;color:#d4e1f0;text-shadow:1px 1px 0 #000;min-width:48px;text-align:right}
+
+    input[type="range"]{height:32px}
+
+    .seed-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:stretch}
+
+    .seed-row .mc-btn{padding-inline:12px;min-width:116px}
+
+    .hint{
+      margin-top:4px;
+      min-height:14px;
+      font-family:"VT323", monospace;
+      font-size:23px;
+      color:#b8c7d7;
+      text-shadow:1px 1px 0 #000;
+    }
+
+    .actions{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .actions.single{grid-template-columns:1fr}
+    .actions.triple{grid-template-columns:1fr 1fr 1fr}
+
+    .toast{
+      position:fixed;
+      left:50%;
+      top:14%;
+      transform:translateX(-50%);
+      z-index:9;
+      padding:6px 12px;
+      font-family:"VT323", monospace;
+      font-size:26px;
+      color:#f3f5f7;
+      text-shadow:1px 1px 0 #000;
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(18,21,26,0.8);
+      opacity:0;
+      transition:opacity 120ms, transform 120ms;
+      pointer-events:none;
+      white-space:nowrap;
+      max-width:min(92vw, 680px);
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    @keyframes logoIn{
+      from{opacity:0;transform:translateY(-14px) scale(0.98)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+
+    @keyframes menuIn{
+      from{opacity:0;transform:translateY(8px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    @keyframes btnIn{
+      from{opacity:0;transform:translateY(5px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    @keyframes splashWave{
+      0%{transform:translate3d(0,0,0) rotate(-15deg) scale(1)}
+      14%{transform:translate3d(0,-1px,0) rotate(-15deg) scale(1.015)}
+      34%{transform:translate3d(0,-4px,0) rotate(-15deg) scale(1.05)}
+      50%{transform:translate3d(0,-6px,0) rotate(-15deg) scale(1.075)}
+      66%{transform:translate3d(0,-4px,0) rotate(-15deg) scale(1.05)}
+      86%{transform:translate3d(0,-1px,0) rotate(-15deg) scale(1.015)}
+      100%{transform:translate3d(0,0,0) rotate(-15deg) scale(1)}
+    }
+
+    @keyframes panelIn{
+      from{transform:translateY(8px) scale(0.98);opacity:0}
+      to{transform:translateY(0) scale(1);opacity:1}
+    }
+
+    @media (max-width:700px){
+      .menu-column{width:min(420px, 95vw);margin-top:36px}
+      .logo-wrap img{max-height:24vh}
+      .splash{right:-4%;bottom:24px}
+      .pair{grid-template-columns:1fr}
+      .menu-list-btn{min-width:112px}
+      .icon-btn{width:40px;height:40px;font-size:10px}
+      .footer-right{display:none}
+      .actions.triple{grid-template-columns:1fr}
+      .singleplayer-screen{padding:12px 10px 12px;grid-template-rows:auto auto minmax(180px,1fr) auto auto}
+      .singleplayer-title{font-size:18px}
+      .singleplayer-searchbar{height:46px;width:min(480px,94vw)}
+      .singleplayer-actions-top{grid-template-columns:1fr}
+      .singleplayer-actions-bottom{grid-template-columns:1fr 1fr}
+      #worldSelectOverlay .world-row{grid-template-columns:52px 1fr;gap:8px;padding:6px 7px}
+      .world-thumb{width:52px;height:40px}
+      #worldSelectOverlay .world-meta,
+      .world-submeta{font-size:11px;line-height:1.12}
+      #worldSelectOverlay .singleplayer-actions-top .mc-btn{height:48px;font-size:14px}
+      #worldSelectOverlay .singleplayer-actions-bottom .mc-btn{height:44px;font-size:13px}
+    }
+
+    @media (max-height:620px){
+      .shell{padding-top:58px;gap:12px}
+      .menu-column{margin-top:10px}
+      .logo-wrap img{max-height:20vh}
+      .logo-wrap{margin-bottom:6px}
+      .help-box{display:none}
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="scanline" aria-hidden="true"></div>
+
+  <div class="top-row">
+    <button id="menuListBtn" class="mc-btn menu-list-btn" type="button">Menu List</button>
+    <div class="corner-icons">
+      <button id="langBtn" class="mc-btn icon-btn" type="button" title="Language">EN</button>
+      <button id="packBtn" class="mc-btn icon-btn" type="button" title="Resource Pack">RP</button>
+    </div>
+  </div>
+
+  <main class="shell">
+    <section class="logo-wrap" aria-label="BlockieCraft logo">
+      <img src="assets/BlockieCraftLogo.png" alt="BlockieCraft logo" />
+      <div class="splash" id="splashText">Blocks barrel rolls!</div>
+    </section>
+
+    <section class="menu-column" aria-label="Main menu">
+      <button id="singleplayerBtn" class="mc-btn" type="button">Singleplayer</button>
+      <button id="multiplayerBtn" class="mc-btn" type="button">Multiplayer</button>
+      <button id="modsBtn" class="mc-btn" type="button">Mods</button>
+      <div class="pair">
+        <button id="optionsBtn" class="mc-btn" type="button">Options...</button>
+        <button id="quitBtn" class="mc-btn warn" type="button">Quit Game</button>
+      </div>
+    </section>
+
+    <div id="helpBox" class="help-box" aria-live="polite"></div>
+  </main>
+
+  <div class="footer-left">BlockieCraft Alpha 0.7.0</div>
+  <div class="footer-right">Made by TFG CO.</div>
+
+  <div id="worldSelectOverlay" class="overlay" aria-hidden="true">
+    <section class="singleplayer-screen" aria-label="Select world">
+      <h2 class="singleplayer-title">Select World</h2>
+      <div class="singleplayer-searchbar" aria-hidden="true"></div>
+
+      <div id="worldList" class="world-list" role="listbox" aria-label="Saved worlds"></div>
+
+      <div class="singleplayer-actions-top">
+        <button id="playWorldBtn" class="mc-btn primary" type="button">Play Selected World</button>
+        <button id="createWorldOpenBtn" class="mc-btn" type="button">Create New World</button>
+      </div>
+
+      <div class="singleplayer-actions-bottom">
+        <button id="editWorldBtn" class="mc-btn" type="button">Edit</button>
+        <button id="deleteWorldBtn" class="mc-btn warn" type="button">Delete</button>
+        <button id="recreateWorldBtn" class="mc-btn" type="button">Re-Create</button>
+        <button id="cancelWorldSelectBtn" class="mc-btn" type="button">Cancel</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="worldSettingsOverlay" class="overlay" aria-hidden="true">
+    <form id="worldSettingsForm" class="panel-card" autocomplete="off">
+      <h2 id="worldSettingsTitle" class="panel-title">Create New World</h2>
+
+      <div class="field">
+        <label for="worldName">World Name</label>
+        <input id="worldName" maxlength="32" value="Overworld" />
+      </div>
+
+      <div class="field">
+        <label for="seedInput">Seed for the World Generator</label>
+        <div class="seed-row">
+          <input id="seedInput" placeholder="Leave blank for random" />
+          <button id="randomSeedBtn" class="mc-btn" type="button">Random</button>
+        </div>
+        <div id="seedPreview" class="hint"></div>
+      </div>
+
+      <div class="field">
+        <label for="presetSelect">Terrain Preset</label>
+        <select id="presetSelect">
+          <option value="classic">Classic</option>
+          <option value="balanced" selected>Balanced</option>
+          <option value="wild">Wild</option>
+        </select>
+        <div id="presetHint" class="hint"></div>
+      </div>
+
+      <div class="field">
+        <label for="renderDist">Render Distance (2-8 chunks)</label>
+        <input id="renderDist" type="number" min="2" max="8" step="1" value="3" />
+      </div>
+
+      <div class="actions triple">
+        <button id="backWorldSettingsBtn" class="mc-btn" type="button">Cancel</button>
+        <button id="saveWorldBtn" class="mc-btn" type="button">Save World</button>
+        <button id="saveAndPlayBtn" class="mc-btn primary" type="submit">Save &amp; Play</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="optionsOverlay" class="overlay" aria-hidden="true">
+    <form id="optionsForm" class="panel-card" autocomplete="off">
+      <h2 class="panel-title">Options</h2>
+
+      <div class="field range">
+        <label for="optMaster">Master Volume</label>
+        <div class="range-row">
+          <input id="optMaster" type="range" min="0" max="100" step="1" value="50" />
+          <div id="optMasterVal" class="range-val">50%</div>
+        </div>
+      </div>
+
+      <div class="field range">
+        <label for="optMusic">Music Volume</label>
+        <div class="range-row">
+          <input id="optMusic" type="range" min="0" max="100" step="1" value="100" />
+          <div id="optMusicVal" class="range-val">100%</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="optRenderDist">Default Render Distance</label>
+        <input id="optRenderDist" type="number" min="2" max="8" step="1" value="3" />
+      </div>
+
+      <div class="field">
+        <label for="optSfx">Sound Effects</label>
+        <select id="optSfx">
+          <option value="on">ON</option>
+          <option value="off">OFF</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="optShowFPS">Show FPS Counter</label>
+        <select id="optShowFPS">
+          <option value="on">ON</option>
+          <option value="off">OFF</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button id="cancelOptionsBtn" class="mc-btn" type="button">Cancel</button>
+        <button id="saveOptionsBtn" class="mc-btn primary" type="submit">Done</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <audio id="menuMusic" src="assets/menuaudio1.mp3" loop preload="auto"></audio>
+  <audio id="clickSfx" src="assets/click.mp3" preload="auto"></audio>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
+
+    const SPLASH_LINES=[
+      "Blocks barrel rolls!",
+      "Now with cleaner terrain!",
+      "No more phantom cliff walls!",
+      "Biomes feel legit now!",
+      "Seed and send it!",
+      "Mud got an upgrade!",
+      "Chunk by chunk, smooth and steady!",
+      "Torchlight hits different at dusk!",
+      "Careful, cactus still hurts!",
+      "Pick a seed, own the skyline!",
+      "Rivers finally behave!",
+      "Classic vibes, modern chunks!",
+      "Generated with extra cozy hills!",
+      "Spawn safer, explore farther!",
+      "Clouds on, worries off!",
+      "Resource packs ready to roll!",
+      "Survival mode says hello!",
+      "Now with less menu chaos!",
+      "Keep calm and place blocks!",
+      "Mountains with better manners!",
+      "Baked fresh from one HTML file!"
+    ];
+
+    const SPLASH_LINE_RARE=[
+      "Sam's gay",
+      "Shove a fork in a outlet! Trust me, it's fine.",
+      "Stop looking at me please",
+      "I know you want to see the source code, but trust me, it's for the best if you don't.",
+    ];
+
+    const PRESET_HINTS={
+      classic:"Gentle terrain and fewer dramatic peaks.",
+      balanced:"Default profile with stable rivers and clean coasts.",
+      wild:"Higher relief and sharper terrain transitions."
+    };
+
+    const DEFAULT_SETTINGS={
+      fpsLimit:0,
+      renderDist:3,
+      fov:75,
+      brightness:50,
+      shadows:true,
+      clouds:true,
+      particles:true,
+      viewBobbing:true,
+      showFPS:true,
+      fullscreen:false,
+      masterVolume:50,
+      musicVolume:100,
+      sfx:true,
+      mouseSens:50
+    };
+
+    const ADJ=["silent","frost","ember","wild","ancient","twisted","verdant","ashen","lunar","raven"];
+    const NOUN=["valley","canyon","archipelago","spire","delta","grove","mesa","marsh","ridge","hollow"];
+
+    const WORLD_STORAGE_KEY="blockiecraft_worlds";
+    const LAST_WORLD_ID_KEY="blockiecraft_last_world_id";
+    const RESOURCE_PACK_STORAGE_KEY="blockiecraft_resource_pack";
+    const RESOURCE_PACK_OPTIONS=[
+      {id:"classic-lite",label:"Classic Lite"},
+      {id:"default",label:"Default (Procedural)"}
+    ];
+    const GAME_VERSION=(document.querySelector(".footer-left")?.textContent||"Alpha 0.7.0").trim();
+
+    const worldSelectOverlay=document.getElementById("worldSelectOverlay");
+    const worldSettingsOverlay=document.getElementById("worldSettingsOverlay");
+    const worldSettingsForm=document.getElementById("worldSettingsForm");
+    const worldSettingsTitle=document.getElementById("worldSettingsTitle");
+    const worldList=document.getElementById("worldList");
+
+    const worldNameInput=document.getElementById("worldName");
+    const seedInput=document.getElementById("seedInput");
+    const presetSelect=document.getElementById("presetSelect");
+    const renderDistInput=document.getElementById("renderDist");
+    const seedPreview=document.getElementById("seedPreview");
+    const presetHint=document.getElementById("presetHint");
+
+    const playWorldBtn=document.getElementById("playWorldBtn");
+    const createWorldOpenBtn=document.getElementById("createWorldOpenBtn");
+    const editWorldBtn=document.getElementById("editWorldBtn");
+    const deleteWorldBtn=document.getElementById("deleteWorldBtn");
+    const recreateWorldBtn=document.getElementById("recreateWorldBtn");
+    const cancelWorldSelectBtn=document.getElementById("cancelWorldSelectBtn");
+    const backWorldSettingsBtn=document.getElementById("backWorldSettingsBtn");
+    const saveWorldBtn=document.getElementById("saveWorldBtn");
+    const saveAndPlayBtn=document.getElementById("saveAndPlayBtn");
+    const randomSeedBtn=document.getElementById("randomSeedBtn");
+
+    const optionsOverlay=document.getElementById("optionsOverlay");
+    const optionsForm=document.getElementById("optionsForm");
+    const optMaster=document.getElementById("optMaster");
+    const optMusic=document.getElementById("optMusic");
+    const optMasterVal=document.getElementById("optMasterVal");
+    const optMusicVal=document.getElementById("optMusicVal");
+    const optRenderDist=document.getElementById("optRenderDist");
+    const optSfx=document.getElementById("optSfx");
+    const optShowFPS=document.getElementById("optShowFPS");
+
+    const splashText=document.getElementById("splashText");
+    const helpBox=document.getElementById("helpBox");
+    const toast=document.getElementById("toast");
+    const packBtn=document.getElementById("packBtn");
+    const menuMusic=document.getElementById("menuMusic");
+    const clickSfx=document.getElementById("clickSfx");
+
+    let toastTimer=null;
+    let helpVisible=false;
+    let selectedWorldId=null;
+    let worldSettingsMode="create";
+    let editingWorldId=null;
+    let worldPanelWasOpen=false;
+    let musicUnlockArmed=false;
+    let musicStarted=false;
+    let clickSfxUnlockArmed=false;
+    let clickSfxUnlocked=false;
+    let menuBackgroundSuspended=false;
+    let selectedResourcePackId="classic-lite";
+
+    function showToast(text,ms=1600){
+      toast.textContent=text;
+      toast.classList.add("show");
+      if(toastTimer)clearTimeout(toastTimer);
+      toastTimer=setTimeout(()=>toast.classList.remove("show"),ms);
+    }
+
+    function hashSeed(text){
+      let h=2166136261;
+      for(let i=0;i<text.length;i++){
+        h^=text.charCodeAt(i);
+        h=Math.imul(h,16777619);
+      }
+      return h>>>0;
+    }
+
+    function randomUint32(){
+      if(window.crypto&&window.crypto.getRandomValues){
+        const arr=new Uint32Array(1);
+        window.crypto.getRandomValues(arr);
+        return arr[0]>>>0;
+      }
+      return (Math.random()*4294967295)>>>0;
+    }
+
+    function setRandomSplash(){
+      const useRare=Math.random()<0.05&&SPLASH_LINE_RARE.length>0;
+      const pool=useRare?SPLASH_LINE_RARE:SPLASH_LINES;
+      splashText.textContent=pool[Math.floor(Math.random()*pool.length)]||"";
+    }
+
+    function randomSeedString(){
+      const a=ADJ[Math.floor(Math.random()*ADJ.length)];
+      const b=NOUN[Math.floor(Math.random()*NOUN.length)];
+      const n=Math.floor(100+Math.random()*900);
+      return a+"-"+b+"-"+n;
+    }
+
+    const worldThumbCache=new Map();
+
+    function createSeededRandom(seed){
+      let state=(seed>>>0)||1;
+      return ()=>{
+        state=(Math.imul(state,1664525)+1013904223)>>>0;
+        return state/4294967296;
+      };
+    }
+
+    function getWorldThumbDataUrl(world){
+      const cacheKey=`${world.id}|${world.seed}|${world.worldName}|${world.preset}`;
+      if(worldThumbCache.has(cacheKey))return worldThumbCache.get(cacheKey);
+
+      const canvas=document.createElement("canvas");
+      canvas.width=64;
+      canvas.height=48;
+      const ctx=canvas.getContext("2d",{alpha:false});
+      if(!ctx)return "";
+
+      const seed=hashSeed(cacheKey);
+      const rand=createSeededRandom(seed);
+
+      let skyTop="#6f8ec1";
+      let skyBottom="#9bb7de";
+      if(world.preset==="wild"){
+        skyTop="#607eae";
+        skyBottom="#8fb0d9";
+      }else if(world.preset==="classic"){
+        skyTop="#7a97c8";
+        skyBottom="#aac4e6";
+      }
+
+      const sky=ctx.createLinearGradient(0,0,0,30);
+      sky.addColorStop(0,skyTop);
+      sky.addColorStop(1,skyBottom);
+      ctx.fillStyle=sky;
+      ctx.fillRect(0,0,64,30);
+
+      ctx.fillStyle="rgba(255,245,196,0.9)";
+      ctx.fillRect(5+Math.floor(rand()*14),4+Math.floor(rand()*4),4,4);
+
+      for(let i=0;i<3;i++){
+        const cloudY=4+Math.floor(rand()*12);
+        const cloudX=Math.floor(rand()*48);
+        const w=8+Math.floor(rand()*12);
+        ctx.fillStyle="rgba(255,255,255,0.30)";
+        ctx.fillRect(cloudX,cloudY,w,2);
+      }
+
+      const baseLine=22+Math.floor(rand()*3);
+      const amp=4+Math.floor(rand()*4);
+      const freq=0.11+rand()*0.08;
+
+      ctx.fillStyle="#4f5f43";
+      ctx.beginPath();
+      ctx.moveTo(0,48);
+      for(let x=0;x<64;x++){
+        const y=baseLine+Math.floor(Math.sin((x*freq)+(rand()*6.28))*amp);
+        ctx.lineTo(x,y);
+      }
+      ctx.lineTo(63,48);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle="#5f6f4f";
+      ctx.fillRect(0,30,64,8);
+      ctx.fillStyle="#3d2f21";
+      ctx.fillRect(0,38,64,10);
+
+      if(rand()>0.45){
+        const riverY=30+Math.floor(rand()*5);
+        ctx.fillStyle="#456a94";
+        ctx.fillRect(0,riverY,64,2);
+      }
+
+      const treeX=10+Math.floor(rand()*44);
+      const treeY=24+Math.floor(rand()*7);
+      ctx.fillStyle="#4a3323";
+      ctx.fillRect(treeX,treeY,2,6);
+      ctx.fillStyle="#2f5f34";
+      ctx.fillRect(treeX-2,treeY-3,6,3);
+      ctx.fillRect(treeX-1,treeY-5,4,2);
+
+      const url=canvas.toDataURL("image/png");
+      worldThumbCache.set(cacheKey,url);
+      return url;
+    }
+
+    function effectiveSeed(){
+      const txt=seedInput.value.trim();
+      return txt||"(random when saved)";
+    }
+
+    function updateSeedPreview(){
+      seedPreview.textContent="Effective seed: "+effectiveSeed();
+    }
+
+    function updatePresetHint(){
+      presetHint.textContent=PRESET_HINTS[presetSelect.value]||"";
+    }
+
+    function formatPresetName(preset){
+      if(!preset)return "Balanced";
+      return preset.charAt(0).toUpperCase()+preset.slice(1);
+    }
+
+    function getSettings(){
+      try{return Object.assign({},DEFAULT_SETTINGS,JSON.parse(localStorage.getItem("blockiecraft_settings")||"{}"));}
+      catch(e){return {...DEFAULT_SETTINGS};}
+    }
+
+    function saveSettings(next){
+      const merged=Object.assign({},getSettings(),next);
+      localStorage.setItem("blockiecraft_settings",JSON.stringify(merged));
+      return merged;
+    }
+
+    function normalizeResourcePackId(raw){
+      const id=String(raw??"").trim().toLowerCase();
+      if(id==="off"||id==="none")return "default";
+      return RESOURCE_PACK_OPTIONS.some(opt=>opt.id===id)?id:"classic-lite";
+    }
+
+    function resourcePackLabel(id){
+      return RESOURCE_PACK_OPTIONS.find(opt=>opt.id===id)?.label||"Classic Lite";
+    }
+
+    function loadSelectedResourcePackId(){
+      try{return normalizeResourcePackId(localStorage.getItem(RESOURCE_PACK_STORAGE_KEY)||"classic-lite");}
+      catch(e){return "classic-lite";}
+    }
+
+    function saveSelectedResourcePackId(id){
+      selectedResourcePackId=normalizeResourcePackId(id);
+      try{localStorage.setItem(RESOURCE_PACK_STORAGE_KEY,selectedResourcePackId);}catch(e){}
+      syncPackButtonState();
+      return selectedResourcePackId;
+    }
+
+    function syncPackButtonState(){
+      if(!packBtn)return;
+      const label=resourcePackLabel(selectedResourcePackId);
+      packBtn.title=`Resource Pack: ${label} (click to switch)`;
+      packBtn.setAttribute("aria-label",`Resource Pack: ${label}`);
+      packBtn.dataset.pack=selectedResourcePackId;
+    }
+
+    function cycleResourcePackSelection(){
+      const idx=RESOURCE_PACK_OPTIONS.findIndex(opt=>opt.id===selectedResourcePackId);
+      const next=RESOURCE_PACK_OPTIONS[(idx+1+RESOURCE_PACK_OPTIONS.length)%RESOURCE_PACK_OPTIONS.length];
+      saveSelectedResourcePackId(next.id);
+      showToast(`Resource pack set to ${next.label}.`,1700);
+    }
+
+    function worldTimestampLabel(v){
+      const d=new Date(v||Date.now());
+      return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+    }
+
+    function normalizeWorldEntry(raw){
+      if(!raw||typeof raw!=="object")return null;
+      const worldName=(String(raw.worldName||"Overworld").trim()||"Overworld").slice(0,32);
+      const seed=String(raw.seed||"").trim();
+      const preset=PRESET_HINTS[raw.preset]?raw.preset:"balanced";
+      const renderDist=Math.max(2,Math.min(8,Math.round(Number(raw.renderDist)||3)));
+      const resourcePack=normalizeResourcePackId(raw.resourcePack||"classic-lite");
+      const createdAt=Number(raw.createdAt)||Date.now();
+      const updatedAt=Number(raw.updatedAt)||createdAt;
+      const lastPlayedAt=Number(raw.lastPlayedAt)||0;
+      const id=String(raw.id||("world-"+hashSeed(worldName+seed+createdAt).toString(36)));
+      return {id,worldName,seed,preset,renderDist,resourcePack,createdAt,updatedAt,lastPlayedAt};
+    }
+
+    function getWorlds(){
+      try{
+        const parsed=JSON.parse(localStorage.getItem(WORLD_STORAGE_KEY)||"[]");
+        if(!Array.isArray(parsed))return [];
+        return parsed
+          .map(normalizeWorldEntry)
+          .filter(Boolean)
+          .sort((a,b)=>((b.lastPlayedAt||b.updatedAt||b.createdAt)-(a.lastPlayedAt||a.updatedAt||a.createdAt)));
+      }catch(e){
+        return [];
+      }
+    }
+
+    function saveWorlds(nextWorlds){
+      localStorage.setItem(WORLD_STORAGE_KEY,JSON.stringify(nextWorlds));
+    }
+
+    function rememberSelectedWorld(id){
+      selectedWorldId=id;
+      if(id)localStorage.setItem(LAST_WORLD_ID_KEY,id);
+      else localStorage.removeItem(LAST_WORLD_ID_KEY);
+    }
+
+    function migrateLegacyLastWorld(){
+      const existing=getWorlds();
+      if(existing.length)return;
+      try{
+        const raw=localStorage.getItem("blockiecraft_last_world");
+        if(!raw)return;
+        const cfg=JSON.parse(raw);
+        const now=Date.now();
+        const migrated=normalizeWorldEntry({
+          id:"legacy-"+now.toString(36),
+          worldName:cfg.worldName||"Overworld",
+          seed:cfg.seed||randomSeedString(),
+          preset:cfg.preset||"balanced",
+          renderDist:cfg.renderDist||3,
+          resourcePack:selectedResourcePackId,
+          createdAt:now,
+          updatedAt:now,
+          lastPlayedAt:now
+        });
+        if(!migrated)return;
+        saveWorlds([migrated]);
+        rememberSelectedWorld(migrated.id);
+      }catch(e){}
+    }
+
+    function setWorldFormValues(cfg){
+      worldNameInput.value=(cfg.worldName||"Overworld").slice(0,32);
+      seedInput.value=cfg.seed||"";
+      presetSelect.value=PRESET_HINTS[cfg.preset]?cfg.preset:"balanced";
+      renderDistInput.value=String(Math.max(2,Math.min(8,Math.round(Number(cfg.renderDist)||3))));
+      selectedResourcePackId=normalizeResourcePackId(cfg.resourcePack||selectedResourcePackId);
+      syncPackButtonState();
+      updateSeedPreview();
+      updatePresetHint();
+    }
+
+    function buildWorldConfigFromForm(){
+      const worldName=(worldNameInput.value.trim()||"Overworld").slice(0,32);
+      const seed=(seedInput.value.trim()||randomSeedString()).slice(0,64);
+      const preset=PRESET_HINTS[presetSelect.value]?presetSelect.value:"balanced";
+      const renderDist=Math.max(2,Math.min(8,Math.round(Number(renderDistInput.value)||3)));
+      const resourcePack=normalizeResourcePackId(selectedResourcePackId);
+      return {worldName,seed,preset,renderDist,resourcePack};
+    }
+
+    function launchWorldFromConfig(cfg){
+      const q=new URLSearchParams();
+      if(cfg&&cfg.id)q.set("worldId",String(cfg.id));
+      q.set("worldName",cfg.worldName);
+      q.set("seed",cfg.seed||randomSeedString());
+      q.set("preset",cfg.preset||"balanced");
+      q.set("renderDist",String(Math.max(2,Math.min(8,Math.round(Number(cfg.renderDist)||3)))));
+      q.set("pack",normalizeResourcePackId(cfg.resourcePack||selectedResourcePackId));
+      location.href="game.html?"+q.toString();
+    }
+
+    function renderWorldList(){
+      const worlds=getWorlds();
+      worldList.innerHTML="";
+
+      if(!worlds.length){
+        rememberSelectedWorld(null);
+        const empty=document.createElement("div");
+        empty.className="empty-worlds";
+        empty.textContent="No worlds yet.\nCreate your first world.";
+        worldList.appendChild(empty);
+        playWorldBtn.disabled=true;
+        editWorldBtn.disabled=true;
+        deleteWorldBtn.disabled=true;
+        recreateWorldBtn.disabled=true;
+        return;
+      }
+
+      const preferred=localStorage.getItem(LAST_WORLD_ID_KEY);
+      const hasCurrent=selectedWorldId&&worlds.some(w=>w.id===selectedWorldId);
+      if(!hasCurrent){
+        const fallback=worlds.find(w=>w.id===preferred)||worlds[0];
+        selectedResourcePackId=normalizeResourcePackId(fallback.resourcePack||selectedResourcePackId);
+        syncPackButtonState();
+        rememberSelectedWorld(fallback.id);
+      }
+
+      for(const world of worlds){
+        const item=document.createElement("button");
+        item.type="button";
+        item.className="world-row"+(world.id===selectedWorldId?" active":"");
+        item.setAttribute("role","option");
+        item.setAttribute("aria-selected",world.id===selectedWorldId?"true":"false");
+
+        const name=document.createElement("div");
+        name.className="world-name";
+        name.textContent=world.worldName;
+
+        const thumb=document.createElement("div");
+        thumb.className="world-thumb";
+        const thumbImg=document.createElement("img");
+        thumbImg.className="world-thumb-img";
+        thumbImg.alt="";
+        thumbImg.decoding="async";
+        thumbImg.loading="lazy";
+        thumbImg.src=getWorldThumbDataUrl(world);
+        thumb.appendChild(thumbImg);
+
+        const detail=document.createElement("div");
+        detail.className="world-meta";
+        detail.textContent=`${world.worldName} (${worldTimestampLabel(world.lastPlayedAt||world.updatedAt)})`;
+
+        const extra=document.createElement("div");
+        extra.className="world-submeta";
+        extra.textContent=`Survival Mode, Version: ${GAME_VERSION} | ${formatPresetName(world.preset)} | ${world.renderDist} chunks | Pack: ${resourcePackLabel(world.resourcePack)} | Seed: ${world.seed||"random"}`;
+
+        const info=document.createElement("div");
+        info.className="world-info";
+        info.appendChild(name);
+        info.appendChild(detail);
+        info.appendChild(extra);
+
+        item.appendChild(thumb);
+        item.appendChild(info);
+        item.addEventListener("click",()=>{
+          selectedResourcePackId=normalizeResourcePackId(world.resourcePack||selectedResourcePackId);
+          syncPackButtonState();
+          rememberSelectedWorld(world.id);
+          renderWorldList();
+        });
+        worldList.appendChild(item);
+      }
+
+      playWorldBtn.disabled=false;
+      editWorldBtn.disabled=false;
+      deleteWorldBtn.disabled=false;
+      recreateWorldBtn.disabled=false;
+    }
+
+    function syncSingleplayerPresentationState(){
+      const singleplayerUiOpen=
+        worldSelectOverlay.classList.contains("open")||
+        worldSettingsOverlay.classList.contains("open");
+      setMenuBackgroundSuspended(singleplayerUiOpen);
+    }
+
+    function openWorldSelectPanel(){
+      worldSelectOverlay.classList.add("open");
+      worldSelectOverlay.setAttribute("aria-hidden","false");
+      syncSingleplayerPresentationState();
+      renderWorldList();
+      setTimeout(()=>{
+        if(playWorldBtn.disabled)createWorldOpenBtn.focus();
+        else playWorldBtn.focus();
+      },40);
+    }
+
+    function closeWorldSelectPanel(keepSingleplayerState=false){
+      worldSelectOverlay.classList.remove("open");
+      worldSelectOverlay.setAttribute("aria-hidden","true");
+      if(!keepSingleplayerState)syncSingleplayerPresentationState();
+    }
+
+    function openWorldSettingsPanel(mode,returnToList=false,prefillConfig=null){
+      worldPanelWasOpen=returnToList||worldSelectOverlay.classList.contains("open");
+      worldSettingsMode=mode;
+      editingWorldId=null;
+
+      if(mode==="edit"){
+        const selected=getWorlds().find(w=>w.id===selectedWorldId);
+        if(!selected){
+          showToast("Select a world to edit.");
+          return;
+        }
+        editingWorldId=selected.id;
+        setWorldFormValues(selected);
+      }else if(prefillConfig){
+        setWorldFormValues(prefillConfig);
+      }else{
+        const defaults=getSettings();
+        const worlds=getWorlds();
+        setWorldFormValues({
+          worldName:`New World ${worlds.length+1}`,
+          seed:"",
+          preset:"balanced",
+          renderDist:defaults.renderDist
+        });
+      }
+
+      worldSettingsTitle.textContent=mode==="edit"?"Edit World":"Create New World";
+      saveWorldBtn.textContent=mode==="edit"?"Save Changes":"Save World";
+      saveAndPlayBtn.textContent=mode==="edit"?"Save & Play":"Create & Play";
+
+      worldSettingsOverlay.classList.add("open");
+      worldSettingsOverlay.setAttribute("aria-hidden","false");
+      syncSingleplayerPresentationState();
+      setTimeout(()=>worldNameInput.focus(),40);
+    }
+
+    function closeWorldSettingsPanel(){
+      worldSettingsOverlay.classList.remove("open");
+      worldSettingsOverlay.setAttribute("aria-hidden","true");
+      if(worldPanelWasOpen){
+        worldPanelWasOpen=false;
+        openWorldSelectPanel();
+      }else{
+        syncSingleplayerPresentationState();
+      }
+    }
+
+    function saveWorldFromForm(){
+      const cfg=buildWorldConfigFromForm();
+      const worlds=getWorlds();
+      const now=Date.now();
+      let saved=null;
+
+      if(worldSettingsMode==="edit"&&editingWorldId){
+        const idx=worlds.findIndex(w=>w.id===editingWorldId);
+        if(idx>=0){
+          saved={...worlds[idx],...cfg,updatedAt:now};
+          worlds[idx]=saved;
+        }
+      }
+
+      if(!saved){
+        saved={
+          id:"world-"+now.toString(36)+"-"+randomUint32().toString(36),
+          ...cfg,
+          createdAt:now,
+          updatedAt:now,
+          lastPlayedAt:0
+        };
+        worlds.unshift(saved);
+      }
+
+      saveWorlds(worlds);
+      rememberSelectedWorld(saved.id);
+      return saved;
+    }
+
+    function playSelectedWorld(){
+      const worlds=getWorlds();
+      const idx=worlds.findIndex(w=>w.id===selectedWorldId);
+      if(idx<0){
+        showToast("Select a world first.");
+        return;
+      }
+      worlds[idx]={
+        ...worlds[idx],
+        resourcePack:normalizeResourcePackId(selectedResourcePackId),
+        lastPlayedAt:Date.now(),
+        updatedAt:Date.now()
+      };
+      saveWorlds(worlds);
+      rememberSelectedWorld(worlds[idx].id);
+      launchWorldFromConfig(worlds[idx]);
+    }
+
+    function editSelectedWorld(){
+      if(!selectedWorldId){
+        showToast("Select a world to edit.");
+        return;
+      }
+      closeWorldSelectPanel(true);
+      openWorldSettingsPanel("edit",true);
+    }
+
+    function deleteSelectedWorld(){
+      const worlds=getWorlds();
+      const idx=worlds.findIndex(w=>w.id===selectedWorldId);
+      if(idx<0){
+        showToast("No world selected.");
+        return;
+      }
+      const target=worlds[idx];
+      if(!window.confirm(`Delete world \"${target.worldName}\"?`))return;
+      worlds.splice(idx,1);
+      saveWorlds(worlds);
+      rememberSelectedWorld(worlds[0]?.id||null);
+      renderWorldList();
+      showToast("World deleted.");
+    }
+
+    function recreateSelectedWorld(){
+      const selected=getWorlds().find(w=>w.id===selectedWorldId);
+      if(!selected){
+        showToast("Select a world to re-create.");
+        return;
+      }
+
+      closeWorldSelectPanel(true);
+      openWorldSettingsPanel("create",true,{
+        worldName:`${selected.worldName} Copy`.slice(0,32),
+        seed:selected.seed,
+        preset:selected.preset,
+        renderDist:selected.renderDist,
+        resourcePack:selected.resourcePack
+      });
+    }
+
+    function applyMenuMusicVolume(settings=getSettings()){
+      const master=Math.max(0,Math.min(100,Number(settings.masterVolume)||0))/100;
+      const music=Math.max(0,Math.min(100,Number(settings.musicVolume)||0))/100;
+      menuMusic.volume=Math.max(0,Math.min(1,master*music));
+    }
+
+    function onMusicUnlockGesture(){
+      const p=menuMusic.play();
+      if(p&&typeof p.then==="function"){
+        p.then(()=>{
+          musicStarted=true;
+          if(musicUnlockArmed){
+            ["pointerdown","keydown","touchstart"].forEach(evt=>document.removeEventListener(evt,onMusicUnlockGesture));
+            musicUnlockArmed=false;
+          }
+          showToast("Menu music enabled.",1200);
+        }).catch(()=>{});
+      }else{
+        musicStarted=true;
+      }
+    }
+
+    function armMusicUnlock(){
+      if(musicUnlockArmed)return;
+      ["pointerdown","keydown","touchstart"].forEach(evt=>document.addEventListener(evt,onMusicUnlockGesture,{passive:true}));
+      musicUnlockArmed=true;
+    }
+
+    function tryStartMenuMusic(){
+      applyMenuMusicVolume();
+      const p=menuMusic.play();
+      if(p&&typeof p.then==="function"){
+        p.then(()=>{musicStarted=true;}).catch(()=>{
+          musicStarted=false;
+          armMusicUnlock();
+        });
+      }else{
+        musicStarted=true;
+      }
+    }
+
+    function getClickSfxVolume(settings=getSettings()){
+      const master=Math.max(0,Math.min(100,Number(settings.masterVolume)||0))/100;
+      return Math.min(1,master*0.95);
+    }
+
+    function applyClickSfxVolume(settings=getSettings()){
+      const volume=getClickSfxVolume(settings);
+      clickSfx.volume=volume;
+      return volume;
+    }
+
+    function disarmClickSfxUnlock(){
+      if(!clickSfxUnlockArmed)return;
+      ["pointerdown","keydown","touchstart"].forEach(evt=>document.removeEventListener(evt,onClickSfxUnlockGesture,true));
+      clickSfxUnlockArmed=false;
+    }
+
+    function onClickSfxUnlockGesture(){
+      if(clickSfxUnlocked){
+        disarmClickSfxUnlock();
+        return;
+      }
+
+      const s=getSettings();
+      const volume=applyClickSfxVolume(s);
+      if(volume<=0.001)return;
+
+      clickSfx.volume=0.001;
+      clickSfx.currentTime=0;
+      const p=clickSfx.play();
+
+      const onUnlocked=()=>{
+        clickSfx.pause();
+        clickSfx.currentTime=0;
+        clickSfxUnlocked=true;
+        applyClickSfxVolume(s);
+        disarmClickSfxUnlock();
+      };
+
+      if(p&&typeof p.then==="function")p.then(onUnlocked).catch(()=>applyClickSfxVolume(s));
+      else onUnlocked();
+    }
+
+    function armClickSfxUnlock(){
+      if(clickSfxUnlockArmed)return;
+      ["pointerdown","keydown","touchstart"].forEach(evt=>document.addEventListener(evt,onClickSfxUnlockGesture,true));
+      clickSfxUnlockArmed=true;
+    }
+
+    function playClickSfx(){
+      const s=getSettings();
+      const volume=applyClickSfxVolume(s);
+      if(volume<=0.001)return;
+
+      clickSfx.pause();
+      clickSfx.currentTime=0;
+      clickSfx.volume=volume;
+      const p=clickSfx.play();
+      if(p&&typeof p.then==="function"){
+        p.then(()=>{
+          clickSfxUnlocked=true;
+          disarmClickSfxUnlock();
+        }).catch(()=>armClickSfxUnlock());
+      }
+    }
+
+    function openOptionsPanel(){
+      const s=getSettings();
+      optMaster.value=String(s.masterVolume);
+      optMusic.value=String(s.musicVolume);
+      optRenderDist.value=String(Math.max(2,Math.min(8,Math.round(Number(s.renderDist)||3))));
+      optSfx.value=s.sfx?"on":"off";
+      optShowFPS.value=s.showFPS?"on":"off";
+      refreshOptionValueLabels();
+
+      optionsOverlay.classList.add("open");
+      optionsOverlay.setAttribute("aria-hidden","false");
+      setTimeout(()=>optMaster.focus(),40);
+    }
+
+    function closeOptionsPanel(){
+      optionsOverlay.classList.remove("open");
+      optionsOverlay.setAttribute("aria-hidden","true");
+    }
+
+    function refreshOptionValueLabels(){
+      optMasterVal.textContent=`${optMaster.value}%`;
+      optMusicVal.textContent=`${optMusic.value}%`;
+    }
+
+    function saveOptionsFromPanel(){
+      const rd=Math.max(2,Math.min(8,Math.round(Number(optRenderDist.value)||3)));
+      const updated=saveSettings({
+        masterVolume:Math.max(0,Math.min(100,Math.round(Number(optMaster.value)||50))),
+        musicVolume:Math.max(0,Math.min(100,Math.round(Number(optMusic.value)||100))),
+        renderDist:rd,
+        sfx:optSfx.value==="on",
+        showFPS:optShowFPS.value==="on"
+      });
+
+      applyMenuMusicVolume(updated);
+      applyClickSfxVolume(updated);
+      if(updated.masterVolume>0&&updated.musicVolume>0&&!musicStarted){
+        tryStartMenuMusic();
+      }
+
+      if(!renderDistInput.value||Number(renderDistInput.value)<2||Number(renderDistInput.value)>8){
+        renderDistInput.value=String(updated.renderDist);
+      }
+    }
+
+    selectedResourcePackId=loadSelectedResourcePackId();
+    syncPackButtonState();
+
+    document.getElementById("singleplayerBtn").addEventListener("click",openWorldSelectPanel);
+    document.getElementById("optionsBtn").addEventListener("click",openOptionsPanel);
+
+    document.getElementById("multiplayerBtn").addEventListener("click",()=>showToast("Multiplayer is not implemented yet."));
+    document.getElementById("modsBtn").addEventListener("click",()=>showToast("Mods are not implemented yet."));
+
+    document.getElementById("quitBtn").addEventListener("click",()=>{
+      window.close();
+      showToast("Close this tab to quit.",2200);
+    });
+
+    document.getElementById("menuListBtn").addEventListener("click",()=>{
+      helpVisible=!helpVisible;
+      helpBox.classList.toggle("show",helpVisible);
+      helpBox.textContent=helpVisible
+        ?"Singleplayer: browse saved worlds. Options: configure defaults and menu music."
+        :"";
+    });
+
+    document.getElementById("langBtn").addEventListener("click",()=>showToast("Language menu is not wired yet."));
+    packBtn.addEventListener("click",cycleResourcePackSelection);
+
+    playWorldBtn.addEventListener("click",playSelectedWorld);
+    createWorldOpenBtn.addEventListener("click",()=>{
+      closeWorldSelectPanel(true);
+      openWorldSettingsPanel("create",true);
+    });
+    editWorldBtn.addEventListener("click",editSelectedWorld);
+    deleteWorldBtn.addEventListener("click",deleteSelectedWorld);
+    recreateWorldBtn.addEventListener("click",recreateSelectedWorld);
+    cancelWorldSelectBtn.addEventListener("click",()=>closeWorldSelectPanel());
+
+    backWorldSettingsBtn.addEventListener("click",closeWorldSettingsPanel);
+    saveWorldBtn.addEventListener("click",()=>{
+      saveWorldFromForm();
+      closeWorldSettingsPanel();
+      renderWorldList();
+      showToast("World saved.");
+    });
+
+    randomSeedBtn.addEventListener("click",()=>{
+      seedInput.value=randomSeedString();
+      updateSeedPreview();
+    });
+
+    document.getElementById("cancelOptionsBtn").addEventListener("click",closeOptionsPanel);
+
+    seedInput.addEventListener("input",updateSeedPreview);
+    presetSelect.addEventListener("change",updatePresetHint);
+
+    optMaster.addEventListener("input",refreshOptionValueLabels);
+    optMusic.addEventListener("input",refreshOptionValueLabels);
+
+    worldSettingsForm.addEventListener("submit",e=>{
+      e.preventDefault();
+      const saved=saveWorldFromForm();
+      const worlds=getWorlds();
+      const idx=worlds.findIndex(w=>w.id===saved.id);
+      if(idx>=0){
+        worlds[idx]={...worlds[idx],lastPlayedAt:Date.now(),updatedAt:Date.now()};
+        saveWorlds(worlds);
+      }
+      launchWorldFromConfig(saved);
+    });
+
+    optionsForm.addEventListener("submit",e=>{
+      e.preventDefault();
+      saveOptionsFromPanel();
+      closeOptionsPanel();
+      showToast("Options saved.");
+    });
+
+    worldSelectOverlay.addEventListener("click",e=>{
+      if(e.target===worldSelectOverlay)closeWorldSelectPanel();
+    });
+
+    worldSettingsOverlay.addEventListener("click",e=>{
+      if(e.target===worldSettingsOverlay)closeWorldSettingsPanel();
+    });
+
+    optionsOverlay.addEventListener("click",e=>{
+      if(e.target===optionsOverlay)closeOptionsPanel();
+    });
+
+    document.addEventListener("keydown",e=>{
+      if(e.key!=="Escape")return;
+      if(worldSettingsOverlay.classList.contains("open"))closeWorldSettingsPanel();
+      else if(worldSelectOverlay.classList.contains("open"))closeWorldSelectPanel();
+      else if(optionsOverlay.classList.contains("open"))closeOptionsPanel();
+    });
+
+    document.addEventListener("pointerdown",e=>{
+      const btn=e.target.closest(".mc-btn, .world-row");
+      if(!btn||btn.disabled)return;
+      playClickSfx();
+    },true);
+
+    document.addEventListener("keydown",e=>{
+      if(e.key!=="Enter"&&e.key!==" ")return;
+      const active=document.activeElement;
+      if(
+        !active||
+        !active.classList||
+        !(active.classList.contains("mc-btn")||active.classList.contains("world-row"))||
+        active.disabled
+      )return;
+      playClickSfx();
+    },true);
+
+    migrateLegacyLastWorld();
+    renderWorldList();
+    applyMenuMusicVolume();
+    applyClickSfxVolume();
+    tryStartMenuMusic();
+    armClickSfxUnlock();
+    setTimeout(()=>{
+      if(!musicStarted)showToast("Click anywhere to enable menu music.",2100);
+    },1100);
+
+    // Cinematic world background (non-interactive)
+    const canvas=document.getElementById("bgCanvas");
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.7));
+    renderer.setSize(window.innerWidth,window.innerHeight,false);
+    renderer.outputColorSpace=THREE.SRGBColorSpace;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure=1.08;
+
+    // test
+    renderer.setClearColor(0x90a8cf,1);
+
+    const scene=new THREE.Scene();
+    scene.background=new THREE.Color(0x90a8cf);
+    scene.fog=new THREE.Fog(0x90a8cf,44,196);
+
+    const camera=new THREE.PerspectiveCamera(62,window.innerWidth/window.innerHeight,0.1,420);
+
+    const amb=new THREE.AmbientLight(0x6f86a8,0.40);
+    scene.add(amb);
+
+    const hemi=new THREE.HemisphereLight(0xdcecff,0x5d6f4d,0.96);
+    scene.add(hemi);
+
+    const sun=new THREE.DirectionalLight(0xfff1d6,1.58);
+    sun.position.set(54,72,-24);
+    scene.add(sun,sun.target);
+
+    const fillSun=new THREE.DirectionalLight(0xa7c3f0,0.48);
+    fillSun.position.set(-42,22,34);
+    scene.add(fillSun,fillSun.target);
+
+    const rimSun=new THREE.DirectionalLight(0x7ea2d5,0.28);
+    rimSun.position.set(16,14,-58);
+    scene.add(rimSun,rimSun.target);
+
+    const moon=new THREE.DirectionalLight(0x92ade0,0.16);
+    moon.position.set(-34,26,42);
+    scene.add(moon,moon.target);
+
+    const worldRoot=new THREE.Group();
+    scene.add(worldRoot);
+
+    const tmpObj=new THREE.Object3D();
+
+    // Menu panorama knobs.
+    const MENU_BG_CHUNK_SIZE=16;
+    const MENU_BG_FULL_MAP_WIDTH_CHUNKS=25;
+    const MENU_BG_FULL_MAP_DEPTH_CHUNKS=25;
+    const MENU_BG_OCCLUSION_SECTOR_CHUNKS=3;
+    const MENU_BG_OCCLUSION_BINS=256;
+    const MENU_BG_OCCLUSION_UPDATE_MS=80;
+    const MENU_BG_OCCLUSION_VISIBILITY_BIAS=0.045;
+    const MENU_BG_OCCLUSION_HORIZON_GROWTH=0.010;
+    const MENU_BG_BUILD_BUDGET_MS=6.5;
+    const MENU_BG_BUILD_MIN_BATCH=1;
+    const MENU_BG_FIXED_SEED="48151623";
+    const MENU_WORLD_HEIGHT=48;
+    const MENU_WORLD_WATER_LEVEL=11;
+
+    function buildMenuChunkLayout(widthChunks,depthChunks){
+      const w=Math.max(1,Math.floor(widthChunks));
+      const d=Math.max(1,Math.floor(depthChunks));
+      const halfW=Math.floor(w*0.5);
+      const halfH=Math.floor(d*0.5);
+      const minCX=-halfW;
+      const minCZ=-halfH;
+      const maxCX=minCX+w-1;
+      const maxCZ=minCZ+d-1;
+
+      const active=new Set();
+      for(let cz=minCZ;cz<=maxCZ;cz++){
+        for(let cx=minCX;cx<=maxCX;cx++)active.add(`${cx},${cz}`);
+      }
+
+      return {active,minCX,maxCX,minCZ,maxCZ};
+    }
+
+    const MENU_BG_CHUNK_LAYOUT=buildMenuChunkLayout(MENU_BG_FULL_MAP_WIDTH_CHUNKS,MENU_BG_FULL_MAP_DEPTH_CHUNKS);
+    const MENU_BG_MIN_X=MENU_BG_CHUNK_LAYOUT.minCX*MENU_BG_CHUNK_SIZE;
+    const MENU_BG_MIN_Z=MENU_BG_CHUNK_LAYOUT.minCZ*MENU_BG_CHUNK_SIZE;
+    const MENU_BG_MAX_X=((MENU_BG_CHUNK_LAYOUT.maxCX+1)*MENU_BG_CHUNK_SIZE)-1;
+    const MENU_BG_MAX_Z=((MENU_BG_CHUNK_LAYOUT.maxCZ+1)*MENU_BG_CHUNK_SIZE)-1;
+
+    let noiseSeedOffset=0;
+    let menuSkyboxTex=null;
+    let menuCloudGroup=null;
+    let menuSunOrb=null;
+    let menuSunGlow=null;
+    let menuMoonOrb=null;
+    let menuMoonGlow=null;
+    let menuStarDome=null;
+    let menuSkyPhase=0.48;
+    const MENU_SKY_CYCLE_SECONDS=1200;
+    const _menuSkyDir=new THREE.Vector3();
+    const _menuSkyOpp=new THREE.Vector3();
+    const _menuSunPos=new THREE.Vector3();
+    const _menuMoonPos=new THREE.Vector3();
+    const _menuSkyColor=new THREE.Color();
+    let bgWorldBounds={
+      minX:MENU_BG_MIN_X,
+      maxX:MENU_BG_MAX_X,
+      minZ:MENU_BG_MIN_Z,
+      maxZ:MENU_BG_MAX_Z,
+      centerX:(MENU_BG_MIN_X+MENU_BG_MAX_X)*0.5,
+      centerZ:(MENU_BG_MIN_Z+MENU_BG_MAX_Z)*0.5,
+      waterLevel:MENU_WORLD_WATER_LEVEL
+    };
+
+    const menuBackgroundSeedText=String(MENU_BG_FIXED_SEED);
+    let bgOcclusionSectors=[];
+    let bgOcclusionLastUpdate=0;
+    const bgOcclusionFrustum=new THREE.Frustum();
+    const bgOcclusionProjMatrix=new THREE.Matrix4();
+    const bgOcclusionBins=new Float32Array(MENU_BG_OCCLUSION_BINS);
+    let bgBuildStepFn=null;
+    let bgBuildPendingSectors=0;
+
+    function setMenuBackgroundSuspended(suspended){
+      menuBackgroundSuspended=!!suspended;
+      canvas.style.opacity=menuBackgroundSuspended?"0":"1";
+      worldRoot.visible=!menuBackgroundSuspended;
+      if(!menuBackgroundSuspended)bgOcclusionLastUpdate=-Infinity;
+    }
+
+    function skyRand(a,b,c,seed){
+      const v=Math.sin(a*12.9898+b*78.233+c*37.719+seed*0.00017)*43758.5453123;
+      return v-Math.floor(v);
+    }
+
+    function paintSkyFace(size,seed,variant){
+      const c=document.createElement("canvas");
+      c.width=size;
+      c.height=size;
+      const ctx=c.getContext("2d");
+
+      const g=ctx.createLinearGradient(0,0,0,size);
+      if(variant==="top"){
+        g.addColorStop(0,"#2d4b86");
+        g.addColorStop(0.58,"#5a82c4");
+        g.addColorStop(1,"#90b8e0");
+      }else if(variant==="bottom"){
+        g.addColorStop(0,"#88abd5");
+        g.addColorStop(1,"#5e83b5");
+      }else{
+        g.addColorStop(0,"#4c72b3");
+        g.addColorStop(0.56,"#89afd9");
+        g.addColorStop(1,"#bdd7ed");
+      }
+      ctx.fillStyle=g;
+      ctx.fillRect(0,0,size,size);
+
+      const glowX=size*(0.28+skyRand(1,3,variant.length,seed)*0.34);
+      const glowY=size*(variant==="top"?0.18:0.24+skyRand(2,4,variant.length,seed)*0.12);
+      const glow=ctx.createRadialGradient(glowX,glowY,size*0.03,glowX,glowY,size*0.86);
+      glow.addColorStop(0,variant==="top"?"rgba(255,255,255,0.20)":"rgba(255,248,229,0.13)");
+      glow.addColorStop(0.34,"rgba(241,248,255,0.09)");
+      glow.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=glow;
+      ctx.fillRect(0,0,size,size);
+
+      const horizon=ctx.createLinearGradient(0,size*0.46,0,size);
+      horizon.addColorStop(0,"rgba(255,255,255,0)");
+      horizon.addColorStop(1,variant==="bottom"?"rgba(255,255,255,0.11)":"rgba(255,255,255,0.07)");
+      ctx.fillStyle=horizon;
+      ctx.fillRect(0,0,size,size);
+
+      for(let i=0;i<42;i++){
+        const x=skyRand(i,6,variant.length,seed)*size;
+        const y=skyRand(i,7,variant.length,seed)*size*0.72;
+        const a=0.015+skyRand(i,8,variant.length,seed)*0.04;
+        const s=0.6+skyRand(i,9,variant.length,seed)*1.3;
+        ctx.fillStyle=`rgba(255,255,255,${a.toFixed(3)})`;
+        ctx.fillRect(x,y,s,s);
+      }
+
+      return c;
+    }
+
+    function createMenuSkybox(seed){
+      const size=512;
+      const faces=[
+        paintSkyFace(size,seed+11,"side"),
+        paintSkyFace(size,seed+22,"side"),
+        paintSkyFace(size,seed+33,"top"),
+        paintSkyFace(size,seed+44,"bottom"),
+        paintSkyFace(size,seed+55,"side"),
+        paintSkyFace(size,seed+66,"side")
+      ];
+      const tex=new THREE.CubeTexture(faces);
+      tex.colorSpace=THREE.SRGBColorSpace;
+      tex.needsUpdate=true;
+      return tex;
+    }
+
+    function applyMenuSkybox(seed){
+      if(menuSkyboxTex)menuSkyboxTex.dispose();
+      menuSkyboxTex=createMenuSkybox(seed);
+      scene.background=menuSkyboxTex;
+      scene.environment=menuSkyboxTex;
+    }
+
+    function createMenuCloudLayer(seedText){
+      const rand=createSeededRandom(normalizeMenuSeedValue(`${seedText}|clouds`));
+      const layer=new THREE.Group();
+      layer.name="menuCloudLayer";
+
+      const cloudCount=18+Math.floor(rand()*5);
+      const minX=bgWorldBounds.minX-40;
+      const maxX=bgWorldBounds.maxX+40;
+      const minZ=bgWorldBounds.minZ-52;
+      const maxZ=bgWorldBounds.maxZ+52;
+      const minY=bgWorldBounds.waterLevel+52;
+      const maxY=bgWorldBounds.waterLevel+76;
+
+      for(let i=0;i<cloudCount;i++){
+        const cloud=new THREE.Group();
+        cloud.frustumCulled=false;
+
+        const puffCount=3+Math.floor(rand()*5);
+        const puffOpacity=0.70+rand()*0.12;
+        for(let p=0;p<puffCount;p++){
+          const puff=new THREE.Mesh(
+            new THREE.BoxGeometry(8+rand()*8,2+rand()*1.6,6+rand()*7),
+            new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:puffOpacity-(p*0.02),depthWrite:false})
+          );
+          puff.position.set((rand()-.5)*12,(rand()-.5)*2,(rand()-.5)*10);
+          cloud.add(puff);
+        }
+
+        cloud.position.set(
+          THREE.MathUtils.lerp(minX,maxX,rand()),
+          THREE.MathUtils.lerp(minY,maxY,rand()),
+          THREE.MathUtils.lerp(minZ,maxZ,rand())
+        );
+        cloud.userData.baseY=cloud.position.y;
+        cloud.userData.phase=rand()*Math.PI*2;
+        cloud.userData.bob=0.14+rand()*0.12;
+        cloud.userData.spd=1.35+rand()*1.75;
+        cloud.userData.resetZ=()=>THREE.MathUtils.lerp(minZ,maxZ,rand());
+        layer.add(cloud);
+      }
+
+      return layer;
+    }
+
+    function updateMenuClouds(dt){
+      if(!menuCloudGroup||!menuCloudGroup.children.length)return;
+      const camX=camera.position.x;
+
+      for(const cloud of menuCloudGroup.children){
+        cloud.userData.phase=(cloud.userData.phase||0)+dt*(0.55+cloud.userData.spd*0.11);
+        cloud.position.x+=cloud.userData.spd*dt;
+        cloud.position.y=cloud.userData.baseY+Math.sin(cloud.userData.phase)*cloud.userData.bob;
+        if(cloud.position.x-camX>120){
+          cloud.position.x=camX-120;
+          cloud.position.z=cloud.userData.resetZ();
+        }
+      }
+    }
+
+    function makeMenuSunTexture(){
+      const cv=document.createElement("canvas");
+      cv.width=cv.height=32;
+      const ctx=cv.getContext("2d");
+      ctx.clearRect(0,0,32,32);
+      ctx.fillStyle="#f7dd66";
+      ctx.fillRect(6,6,20,20);
+      ctx.fillStyle="#ffe98a";
+      ctx.fillRect(8,8,16,16);
+      ctx.fillStyle="#fff4b3";
+      ctx.fillRect(11,11,10,10);
+      const tex=new THREE.CanvasTexture(cv);
+      tex.magFilter=THREE.NearestFilter;
+      tex.minFilter=THREE.NearestFilter;
+      tex.generateMipmaps=false;
+      tex.colorSpace=THREE.SRGBColorSpace;
+      tex.needsUpdate=true;
+      return tex;
+    }
+
+    function makeMenuMoonTexture(){
+      const cv=document.createElement("canvas");
+      cv.width=cv.height=32;
+      const ctx=cv.getContext("2d");
+      ctx.clearRect(0,0,32,32);
+      ctx.fillStyle="#c9d5ee";
+      ctx.fillRect(6,6,20,20);
+      ctx.fillStyle="#dde7f7";
+      ctx.fillRect(8,8,16,16);
+      ctx.fillStyle="#aab8d8";
+      [[10,10,2,2],[18,9,3,2],[14,18,2,3],[20,18,2,2],[9,16,2,2]].forEach(([x,y,w,h])=>ctx.fillRect(x,y,w,h));
+      const tex=new THREE.CanvasTexture(cv);
+      tex.magFilter=THREE.NearestFilter;
+      tex.minFilter=THREE.NearestFilter;
+      tex.generateMipmaps=false;
+      tex.colorSpace=THREE.SRGBColorSpace;
+      tex.needsUpdate=true;
+      return tex;
+    }
+
+    function makeMenuStarDomeTexture(){
+      const cv=document.createElement("canvas");
+      cv.width=1024;
+      cv.height=512;
+      const ctx=cv.getContext("2d");
+      ctx.fillStyle="#03060f";
+      ctx.fillRect(0,0,cv.width,cv.height);
+      for(let i=0;i<720;i++){
+        const x=(Math.random()*cv.width)|0;
+        const y=(Math.random()*Math.floor(cv.height*0.86))|0;
+        const b=Math.random();
+        if(b>0.93){
+          ctx.fillStyle="#f6fbff";
+          ctx.fillRect(x,y,2,2);
+        }else if(b>0.66){
+          ctx.fillStyle="#dbe9ff";
+          ctx.fillRect(x,y,1,1);
+        }else{
+          ctx.fillStyle="#b7c8ea";
+          ctx.fillRect(x,y,1,1);
+        }
+      }
+      const tex=new THREE.CanvasTexture(cv);
+      tex.magFilter=THREE.NearestFilter;
+      tex.minFilter=THREE.NearestFilter;
+      tex.generateMipmaps=false;
+      tex.colorSpace=THREE.SRGBColorSpace;
+      tex.wrapS=THREE.RepeatWrapping;
+      tex.wrapT=THREE.ClampToEdgeWrapping;
+      tex.needsUpdate=true;
+      return tex;
+    }
+
+    function makeMenuGlowMaterial(colorHex){
+      return new THREE.ShaderMaterial({
+        transparent:true,
+        depthWrite:false,
+        depthTest:true,
+        side:THREE.DoubleSide,
+        toneMapped:false,
+        uniforms:{
+          uTint:{value:new THREE.Color(colorHex)},
+          uStrength:{value:1}
+        },
+        vertexShader:`varying vec2 vUv;
+void main(){
+  vUv=uv;
+  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+}`,
+        fragmentShader:`varying vec2 vUv;
+uniform vec3 uTint;
+uniform float uStrength;
+void main(){
+  vec2 p=vUv-0.5;
+  float d=length(p)*2.0;
+  float core=1.0-smoothstep(0.0,0.86,d);
+  float halo=smoothstep(1.0,0.22,d);
+  float aura=smoothstep(1.0,0.58,d)*0.28;
+  float alpha=(core*core*0.78+halo*0.20+aura)*uStrength;
+  gl_FragColor=vec4(uTint,alpha);
+}`
+      });
+    }
+
+    function ensureMenuCelestialRig(){
+      if(menuSunOrb)return;
+
+      menuSunGlow=new THREE.Mesh(
+        new THREE.PlaneGeometry(28,28),
+        makeMenuGlowMaterial(0xffe3b8)
+      );
+      menuSunGlow.frustumCulled=false;
+      menuSunGlow.renderOrder=1;
+
+      menuSunOrb=new THREE.Mesh(
+        new THREE.PlaneGeometry(13.6,13.6),
+        new THREE.MeshBasicMaterial({map:makeMenuSunTexture(),transparent:true,color:0xffffff,fog:false,depthWrite:false,depthTest:true,side:THREE.DoubleSide,toneMapped:false})
+      );
+      menuSunOrb.frustumCulled=false;
+      menuSunOrb.renderOrder=2;
+
+      menuMoonGlow=new THREE.Mesh(
+        new THREE.PlaneGeometry(22,22),
+        makeMenuGlowMaterial(0xcad8f4)
+      );
+      menuMoonGlow.frustumCulled=false;
+      menuMoonGlow.renderOrder=1;
+
+      menuMoonOrb=new THREE.Mesh(
+        new THREE.PlaneGeometry(11.2,11.2),
+        new THREE.MeshBasicMaterial({map:makeMenuMoonTexture(),transparent:true,color:0xffffff,fog:false,depthWrite:false,depthTest:true,side:THREE.DoubleSide,toneMapped:false})
+      );
+      menuMoonOrb.frustumCulled=false;
+      menuMoonOrb.renderOrder=2;
+
+      menuStarDome=new THREE.Mesh(
+        new THREE.SphereGeometry(320,32,20),
+        new THREE.MeshBasicMaterial({map:makeMenuStarDomeTexture(),color:0xffffff,fog:false,transparent:true,opacity:0,depthWrite:false,side:THREE.BackSide,toneMapped:false})
+      );
+      menuStarDome.frustumCulled=false;
+      menuStarDome.renderOrder=-1;
+
+      scene.add(menuStarDome,menuSunGlow,menuSunOrb,menuMoonGlow,menuMoonOrb);
+    }
+
+    function updateMenuCelestials(dt){
+      ensureMenuCelestialRig();
+
+      menuSkyPhase=(menuSkyPhase+dt/MENU_SKY_CYCLE_SECONDS)%1;
+      const angle=menuSkyPhase*Math.PI*2-Math.PI/2;
+      _menuSkyDir.set(
+        Math.cos(angle)*0.95,
+        Math.sin(angle)*0.82+0.12,
+        Math.sin(angle*0.62+0.58)*0.22
+      ).normalize();
+      _menuSkyOpp.copy(_menuSkyDir).negate();
+
+      const daylight=THREE.MathUtils.clamp(_menuSkyDir.y*0.5+0.5,0.16,1);
+      const night=1-daylight;
+      const dusk=1-Math.abs(daylight-0.5)*2;
+
+      _menuSkyColor.setHSL(0.58-night*0.03,0.48+daylight*0.06,0.60+daylight*0.14+dusk*0.03);
+      scene.fog.color.copy(_menuSkyColor);
+      renderer.setClearColor(_menuSkyColor,1);
+
+      amb.intensity=0.34+daylight*0.26;
+      amb.color.setHSL(0.58,0.34,0.42+daylight*0.18);
+
+      hemi.intensity=0.78+daylight*0.34;
+      hemi.color.setHSL(0.58,0.34,0.72+daylight*0.10);
+      hemi.groundColor.setHSL(0.12,0.24,0.22+daylight*0.12);
+
+      sun.intensity=0.22+daylight*1.48;
+      sun.color.setHSL(0.11-night*0.01,0.72,0.58+daylight*0.10);
+      _menuSunPos.copy(camera.position).addScaledVector(_menuSkyDir,210);
+      sun.position.copy(_menuSunPos);
+      sun.target.position.copy(camera.position).addScaledVector(_menuSkyDir,-12);
+      sun.target.updateMatrixWorld();
+
+      fillSun.intensity=0.14+daylight*0.36;
+      fillSun.color.setHSL(0.58,0.30,0.68+daylight*0.08);
+      fillSun.position.copy(camera.position).addScaledVector(_menuSkyDir,148).addScaledVector(_menuSkyOpp,20);
+      fillSun.target.position.copy(camera.position);
+      fillSun.target.updateMatrixWorld();
+
+      rimSun.intensity=0.08+dusk*0.20;
+      rimSun.color.setHSL(0.60,0.28,0.56+night*0.18);
+      rimSun.position.copy(camera.position).addScaledVector(_menuSkyOpp,170);
+      rimSun.target.position.copy(camera.position);
+      rimSun.target.updateMatrixWorld();
+
+      moon.intensity=0.10+night*0.42;
+      moon.color.setHSL(0.61,0.28,0.74+night*0.10);
+      _menuMoonPos.copy(camera.position).addScaledVector(_menuSkyOpp,190);
+      moon.position.copy(_menuMoonPos);
+      moon.target.position.copy(camera.position).addScaledVector(_menuSkyOpp,-8);
+      moon.target.updateMatrixWorld();
+
+      menuSunGlow.position.copy(camera.position).addScaledVector(_menuSkyDir,206);
+      menuSunGlow.lookAt(camera.position);
+      menuSunGlow.material.uniforms.uStrength.value=0.34+daylight*0.48;
+
+      menuSunOrb.position.copy(camera.position).addScaledVector(_menuSkyDir,204);
+      menuSunOrb.lookAt(camera.position);
+
+      menuMoonGlow.position.copy(camera.position).addScaledVector(_menuSkyOpp,188);
+      menuMoonGlow.lookAt(camera.position);
+      menuMoonGlow.material.uniforms.uStrength.value=0.18+night*0.42;
+
+      menuMoonOrb.position.copy(camera.position).addScaledVector(_menuSkyOpp,186);
+      menuMoonOrb.lookAt(camera.position);
+
+      menuStarDome.position.copy(camera.position);
+      menuStarDome.rotation.y+=dt*0.002;
+      menuStarDome.material.opacity=night*night*0.82;
+    }
+
+    function h2(x,z,s){
+      const v=Math.sin(x*127.1+z*311.7+(s+noiseSeedOffset)*0.013)*43758.5453123;
+      return v-Math.floor(v);
+    }
+
+    function sm(t){return t*t*(3-2*t);}
+
+    function vn2(x,z,seed){
+      const x0=Math.floor(x),z0=Math.floor(z);
+      const tx=sm(x-x0),tz=sm(z-z0);
+      const a=h2(x0,z0,seed),b=h2(x0+1,z0,seed),c=h2(x0,z0+1,seed),d=h2(x0+1,z0+1,seed);
+      const ab=a+(b-a)*tx;
+      const cd=c+(d-c)*tx;
+      return ab+(cd-ab)*tz;
+    }
+
+    function fbm2(x,z,oct,gain,lac,seed){
+      let a=0.5,f=1,sum=0,total=0;
+      for(let i=0;i<oct;i++){
+        sum+=vn2(x*f,z*f,seed+i*31)*a;
+        total+=a;
+        a*=gain;
+        f*=lac;
+      }
+      return sum/Math.max(total,1e-6);
+    }
+
+    function rn2(x,z,seed){
+      return 1-Math.abs(fbm2(x,z,4,0.5,2.0,seed)*2-1);
+    }
+
+    let menuWorldPresetKey="balanced";
+    const MENU_WORLD_PRESETS={
+      classic:{
+        base:6.0,landStart:0.20,landEnd:0.81,
+        contFreq:0.0035,hillFreq:0.0125,ridgeFreq:0.0072,erosionFreq:0.0050,detailFreq:0.034,
+        warpFreq:0.0042,warpAmp:12,
+        landLift:19.0,hillLift:7.0,detailLift:3.0,mountainLift:27.0,
+        oceanDepth:18.5,trenchFreq:0.0105,trenchDepth:5.0,
+        riverFreq:0.016,riverThreshold:0.84,riverDepthMin:1.8,riverDepthRange:2.6,riverCarve:1.65,
+        moistFreq:0.0042,tempFreq:0.0040,
+        smoothing:0.44,microRelief:0.44,cliffStrength:0.60
+      },
+      balanced:{
+        base:6.6,landStart:0.22,landEnd:0.80,
+        contFreq:0.0038,hillFreq:0.0140,ridgeFreq:0.0080,erosionFreq:0.0054,detailFreq:0.040,
+        warpFreq:0.0046,warpAmp:16,
+        landLift:20.0,hillLift:8.0,detailLift:4.0,mountainLift:30.0,
+        oceanDepth:20.0,trenchFreq:0.0112,trenchDepth:6.5,
+        riverFreq:0.0178,riverThreshold:0.83,riverDepthMin:2.1,riverDepthRange:3.0,riverCarve:1.9,
+        moistFreq:0.0044,tempFreq:0.0041,
+        smoothing:0.50,microRelief:0.52,cliffStrength:0.72
+      },
+      wild:{
+        base:7.2,landStart:0.24,landEnd:0.79,
+        contFreq:0.0042,hillFreq:0.0162,ridgeFreq:0.0094,erosionFreq:0.0056,detailFreq:0.046,
+        warpFreq:0.0050,warpAmp:20,
+        landLift:22.0,hillLift:9.5,detailLift:5.3,mountainLift:34.0,
+        oceanDepth:21.0,trenchFreq:0.0120,trenchDepth:7.2,
+        riverFreq:0.0188,riverThreshold:0.82,riverDepthMin:2.2,riverDepthRange:3.4,riverCarve:2.05,
+        moistFreq:0.0045,tempFreq:0.0042,
+        smoothing:0.55,microRelief:0.56,cliffStrength:0.86
+      }
+    };
+
+    const menuColCache=new Map();
+
+    function menuColKey(x,z){
+      return (x+524288)+(z+524288)*1048577;
+    }
+
+    function normalizeMenuSeedValue(raw){
+      const txt=String(raw??"").trim();
+      if(!txt)return hashSeed("menu-default");
+      if(/^-?\d+$/.test(txt)){
+        try{
+          const mod=2147483647n;
+          let n=BigInt(txt)%mod;
+          if(n<0)n+=mod;
+          let v=Number(n);
+          if(v===0)v=1;
+          return v;
+        }catch(e){}
+      }
+      return hashSeed(txt)||1;
+    }
+
+    function currentMenuPreset(){
+      return MENU_WORLD_PRESETS[menuWorldPresetKey]||MENU_WORLD_PRESETS.balanced;
+    }
+
+    function clearMenuColumnCache(){
+      menuColCache.clear();
+    }
+
+    function sampleMenuTerrainPoint(x,z,p,includeClimate=true){
+      const warpA=fbm2(x*p.warpFreq,z*p.warpFreq,2,0.5,2.0,901)-0.5;
+      const warpB=fbm2((x+337)*p.warpFreq,(z-211)*p.warpFreq,2,0.5,2.0,902)-0.5;
+      const sx=x+warpA*p.warpAmp;
+      const sz=z+warpB*p.warpAmp;
+
+      const continental=fbm2(sx*p.contFreq,sz*p.contFreq,5,0.5,2.03,10);
+      const hills=fbm2(sx*p.hillFreq,sz*p.hillFreq,4,0.5,2.05,20);
+      const ridge=rn2(sx*p.ridgeFreq,sz*p.ridgeFreq,30);
+      const erosion=fbm2(sx*p.erosionFreq,sz*p.erosionFreq,4,0.52,2.0,80);
+      const detail=fbm2(sx*p.detailFreq,sz*p.detailFreq,3,0.54,2.2,40);
+
+      const land=THREE.MathUtils.smoothstep(continental,p.landStart,p.landEnd);
+      const erosionInv=1-erosion;
+      const mountain=Math.pow(Math.max(0,ridge-0.16),1.72)*(0.42+erosionInv*0.88);
+
+      let bh=p.base+land*p.landLift+hills*p.hillLift+(detail-0.5)*p.detailLift+mountain*p.mountainLift;
+
+      const oceanMask=Math.max(0,1-land);
+      if(oceanMask>0){
+        bh-=oceanMask*oceanMask*p.oceanDepth;
+        const trench=rn2(sx*p.trenchFreq,sz*p.trenchFreq,205);
+        bh-=Math.max(0,(trench-0.83)/0.17)*oceanMask*p.trenchDepth;
+      }
+
+      const riverBase=fbm2(sx*p.riverFreq,sz*p.riverFreq,4,0.5,2.0,200);
+      const riverRidge=1-Math.abs(riverBase*2-1);
+      const riverCore=Math.max(0,(riverRidge-p.riverThreshold)/(1-p.riverThreshold));
+      const riverStrength=(land>0.22&&mountain<1.05)?riverCore*Math.max(0,1-mountain*0.62):0;
+      if(riverStrength>0){
+        const riverTarget=MENU_WORLD_WATER_LEVEL-(p.riverDepthMin+riverStrength*p.riverDepthRange);
+        bh=THREE.MathUtils.lerp(bh,riverTarget,Math.min(1,riverStrength*p.riverCarve));
+      }
+
+      let moisture=0.5,temperature=0.5;
+      if(includeClimate){
+        moisture=fbm2(sx*p.moistFreq,sz*p.moistFreq,4,0.55,2.0,50);
+        temperature=fbm2(sx*p.tempFreq+90,sz*p.tempFreq-45,4,0.55,2.0,60);
+        const latitude=fbm2((sx+320)*0.0012,(sz-180)*0.0012,2,0.5,2.0,61);
+        temperature=THREE.MathUtils.clamp(temperature*0.82+latitude*0.18,0,1);
+      }
+
+      return {heightRaw:bh,land,mountain,erosion,moisture,temperature,riverStrength,continental};
+    }
+
+    function getMenuCol(x,z){
+      const k=menuColKey(x,z);
+      if(menuColCache.has(k))return menuColCache.get(k);
+
+      const p=currentMenuPreset();
+      const center=sampleMenuTerrainPoint(x,z,p,true);
+      const nE=sampleMenuTerrainPoint(x+1,z,p,false).heightRaw;
+      const nW=sampleMenuTerrainPoint(x-1,z,p,false).heightRaw;
+      const nN=sampleMenuTerrainPoint(x,z-1,p,false).heightRaw;
+      const nS=sampleMenuTerrainPoint(x,z+1,p,false).heightRaw;
+      const ring=(center.heightRaw*4+nE+nW+nN+nS)/8;
+
+      let bh=THREE.MathUtils.lerp(center.heightRaw,ring,p.smoothing);
+      bh+=(h2(x*53+7,z*47-9,451)-0.5)*p.microRelief;
+
+      const cliffMask=Math.max(0,(center.mountain-0.62)*1.9)*Math.max(0,0.56-center.erosion)*p.cliffStrength;
+      if(cliffMask>0){
+        const cliffN=fbm2(x*0.031,z*0.031,2,0.5,2.0,90)-0.5;
+        bh+=cliffN*cliffMask*2.6;
+      }
+
+      const height=Math.floor(THREE.MathUtils.clamp(bh,2,MENU_WORLD_HEIGHT-5));
+      const isRiver=center.riverStrength>0.30&&height<=MENU_WORLD_WATER_LEVEL+2;
+
+      let biome="plains";
+      let surfaceTag="grass";
+      let fillerTag="dirt";
+      let subFillerTag="dirt";
+      let treeType="oak";
+
+      const temperature=center.temperature;
+      const moisture=center.moisture;
+      const beach=height<=MENU_WORLD_WATER_LEVEL+1&&height>=MENU_WORLD_WATER_LEVEL-1;
+      const under=height<MENU_WORLD_WATER_LEVEL-1;
+      const deepOcean=height<MENU_WORLD_WATER_LEVEL-4;
+      const roughCliff=cliffMask>0.16&&center.land>0.30&&center.land<0.82;
+      const alpine=center.mountain>0.76&&height>MENU_WORLD_WATER_LEVEL+15;
+      const stonyHigh=height>MENU_WORLD_WATER_LEVEL+14&&center.mountain>0.62&&center.erosion<0.50;
+
+      if(deepOcean){
+        biome="ocean";
+        if(temperature<0.25){surfaceTag="clay";fillerTag="clay";subFillerTag="stone";}
+        else if(temperature>0.68&&moisture<0.42){surfaceTag="red_sand";fillerTag="sand";subFillerTag="sand";}
+        else{surfaceTag="sand";fillerTag="sand";subFillerTag="clay";}
+        treeType="none";
+      }else if(isRiver){
+        biome="river";
+        const rm=h2(x*9+31,z*7+17,74);
+        if(rm>0.76){surfaceTag="gravel";fillerTag="gravel";subFillerTag="clay";}
+        else if(rm<0.22){surfaceTag="clay";fillerTag="clay";subFillerTag="clay";}
+        else{surfaceTag="sand";fillerTag="sand";subFillerTag="clay";}
+        treeType="none";
+      }else if(stonyHigh){
+        biome="stony_peaks";surfaceTag="gravel";fillerTag="stone";subFillerTag="stone";treeType="none";
+      }else if(alpine){
+        biome="mountain";surfaceTag="snow";fillerTag="stone";subFillerTag="stone";treeType="pine";
+      }else if(temperature<0.24){
+        if(height>MENU_WORLD_WATER_LEVEL+4){
+          biome=temperature<0.15?"snow":"taiga";
+          surfaceTag="snow";fillerTag="dirt";subFillerTag="stone";treeType="pine";
+        }else{
+          biome="tundra";surfaceTag="snow";fillerTag="dirt";subFillerTag="stone";treeType="none";
+        }
+      }else if(temperature>0.70){
+        if(moisture<0.24&&center.land>0.44&&center.erosion<0.44){
+          biome="badlands";surfaceTag="red_sand";fillerTag="red_sand";subFillerTag="gravel";treeType="cactus";
+        }else if(moisture<0.39){
+          biome="desert";surfaceTag="sand";fillerTag="sand";subFillerTag="sand";treeType="cactus";
+        }else if(moisture>0.74){
+          biome="jungle";surfaceTag="grass";fillerTag="dirt";subFillerTag="dirt";treeType="jungle";
+        }else{
+          biome="savanna";surfaceTag="grass";fillerTag="dirt";subFillerTag="dirt";treeType="acacia";
+        }
+      }else{
+        if(moisture>0.84&&temperature>0.42&&temperature<0.66){
+          biome="mangrove";surfaceTag="mud";fillerTag="mud";subFillerTag="clay";treeType="jungle";
+        }else if(moisture>0.76&&temperature>0.35&&temperature<0.60){
+          biome="swamp";surfaceTag="mud";fillerTag="mud";subFillerTag="clay";treeType="oak";
+        }else if(moisture>0.52&&center.erosion>0.55){
+          biome="meadow";surfaceTag="grass";fillerTag="dirt";subFillerTag="dirt";treeType="none";
+        }else if(moisture>0.60){
+          biome="forest";surfaceTag="grass";fillerTag="dirt";subFillerTag="dirt";treeType=moisture>0.76?"birch":"oak";
+        }else if(moisture>0.36){
+          biome="plains";surfaceTag="grass";fillerTag="dirt";subFillerTag="dirt";
+          treeType=h2(x*5,z*7,72)<0.36?"oak":"none";
+        }else{
+          biome="plains";surfaceTag="grass";fillerTag="dirt";subFillerTag="dirt";treeType="oak";
+        }
+      }
+
+      if(beach&&biome!=="snow"&&biome!=="tundra"&&biome!=="river"&&biome!=="ocean"){
+        const shoreN=h2(x*9+31,z*7+17,73);
+        if(roughCliff&&shoreN>0.34){
+          biome="rocky_shore";surfaceTag="gravel";fillerTag="gravel";subFillerTag="stone";
+        }else{
+          const warmBeach=temperature>0.66&&moisture<0.42;
+          surfaceTag=warmBeach?"red_sand":"sand";
+          fillerTag=surfaceTag;
+          subFillerTag=(moisture>0.74||biome==="mangrove")?"clay":surfaceTag;
+        }
+        treeType="none";
+      }
+
+      if(under&&biome!=="river"){
+        if(deepOcean){
+          biome="ocean";
+          if(temperature<0.25){surfaceTag="clay";fillerTag="clay";subFillerTag="stone";}
+          else if(temperature>0.68&&moisture<0.42){surfaceTag="red_sand";fillerTag="sand";subFillerTag="sand";}
+          else{surfaceTag="sand";fillerTag="sand";subFillerTag="clay";}
+        }else if(biome==="swamp"||biome==="mangrove"){
+          surfaceTag="mud";fillerTag="mud";subFillerTag="clay";
+        }else if(roughCliff||biome==="mountain"||biome==="stony_peaks"||biome==="rocky_shore"){
+          surfaceTag="stone";fillerTag="stone";subFillerTag="stone";
+        }else{
+          surfaceTag="dirt";fillerTag="dirt";subFillerTag="stone";
+        }
+        treeType="none";
+      }
+
+      if((biome==="mountain"||biome==="stony_peaks")&&height>MENU_WORLD_WATER_LEVEL+22)treeType="pine";
+
+      const dens={
+        snow:0.007,taiga:0.030,tundra:0,desert:0.005,savanna:0.009,forest:0.048,plains:0.017,
+        river:0,mountain:0.010,jungle:0.095,swamp:0.028,badlands:0.002,meadow:0.010,mangrove:0.026,
+        rocky_shore:0,stony_peaks:0,ocean:0
+      };
+      const tch=(biome!=="snow"||alpine)&&!beach&&!under&&!isRiver?(dens[biome]??0.018):0;
+      const tn=h2(x*13,z*17,70);
+      const hasTree=treeType!=="none"&&tch>0&&tn>1-tch&&h2(Math.floor(x/2),Math.floor(z/2),71)>0.78;
+
+      const col={height,biome,surfaceTag,fillerTag,subFillerTag,hasTree,treeType};
+      menuColCache.set(k,col);
+      return col;
+    }
+
+    const _jitC=new THREE.Color();
+    const _jitA=new THREE.Color();
+    const _jitHSL={h:0,s:0,l:0};
+
+    function rgb(hex){
+      const c=new THREE.Color(hex);
+      return [Math.round(c.r*255),Math.round(c.g*255),Math.round(c.b*255),255];
+    }
+
+    function jit(hex,amt,salt){
+      _jitC.set(hex);
+      _jitC.getHSL(_jitHSL);
+      const v=(salt-0.5)*amt;
+      _jitA.setHSL(
+        _jitHSL.h,
+        THREE.MathUtils.clamp(_jitHSL.s+v*0.2,0,1),
+        THREE.MathUtils.clamp(_jitHSL.l+v,0,1)
+      );
+      return [Math.round(_jitA.r*255),Math.round(_jitA.g*255),Math.round(_jitA.b*255),255];
+    }
+
+    function makeBlockTexture(draw){
+      const c=document.createElement("canvas");
+      c.width=16;c.height=16;
+      const ctx=c.getContext("2d");
+      const img=ctx.createImageData(16,16);
+      const data=img.data;
+
+      for(let y=0;y<16;y++){
+        for(let x=0;x<16;x++){
+          const i=(x+y*16)*4;
+          const col=draw([x,y]);
+          data[i]=col[0];
+          data[i+1]=col[1];
+          data[i+2]=col[2];
+          data[i+3]=col[3]??255;
+        }
+      }
+
+      ctx.putImageData(img,0,0);
+      const tex=new THREE.CanvasTexture(c);
+      tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+      tex.colorSpace=THREE.SRGBColorSpace;
+      tex.magFilter=tex.minFilter=THREE.NearestFilter;
+      tex.generateMipmaps=false;
+      tex.needsUpdate=true;
+      return tex;
+    }
+
+    let animatedWaterTex=null;
+    let sampleTerrainHeight=(x,z)=>MENU_WORLD_WATER_LEVEL;
+
+    function buildWorldBackground(seedText){
+      noiseSeedOffset=normalizeMenuSeedValue(seedText||"menu-default");
+      menuWorldPresetKey=PRESET_HINTS[presetSelect.value]?presetSelect.value:"balanced";
+      clearMenuColumnCache();
+      applyMenuSkybox(noiseSeedOffset);
+      ensureMenuCelestialRig();
+      menuSkyPhase=0.48+(h2(13,17,942)-0.5)*0.05;
+      updateMenuCelestials(0);
+
+      const minX=MENU_BG_MIN_X;
+      const maxX=MENU_BG_MAX_X;
+      const minZ=MENU_BG_MIN_Z;
+      const maxZ=MENU_BG_MAX_Z;
+      const waterLevel=MENU_WORLD_WATER_LEVEL;
+
+      bgWorldBounds={
+        minX,
+        maxX,
+        minZ,
+        maxZ,
+        centerX:(minX+maxX)*0.5,
+        centerZ:(minZ+maxZ)*0.5,
+        waterLevel
+      };
+
+      while(worldRoot.children.length){
+        const child=worldRoot.children.pop();
+        if(!child)break;
+
+        child.traverse(node=>{
+          if(node.geometry&&node.geometry.dispose)node.geometry.dispose();
+          const material=node.material;
+          if(Array.isArray(material)){
+            material.forEach(m=>m&&m.dispose&&m.dispose());
+          }else if(material&&material.dispose){
+            material.dispose();
+          }
+        });
+      }
+
+      menuCloudGroup=null;
+
+      bgBuildStepFn=null;
+      bgBuildPendingSectors=0;
+      bgOcclusionSectors=[];
+
+      const sectorWorldSize=MENU_BG_CHUNK_SIZE*MENU_BG_OCCLUSION_SECTOR_CHUNKS;
+
+      function makeEmptyBucket(sx,sz){
+        return {
+          sx,
+          sz,
+          maxY:1,
+          topGrass:[],
+          topDirt:[],
+          topSand:[],
+          topSnow:[],
+          topStone:[],
+          bodyDirt:[],
+          bodyStone:[],
+          bodySand:[],
+          trunkCols:[],
+          leafCols:[]
+        };
+      }
+
+      function pushSectorItem(bucket,listName,item){
+        bucket[listName].push(item);
+        const top=item.y+(item.sy*0.5);
+        if(top>bucket.maxY)bucket.maxY=top;
+      }
+
+      const heightMap=new Map();
+      const key=(x,z)=>`${x},${z}`;
+
+      function getHeight(x,z){
+        const k=key(x,z);
+        if(heightMap.has(k))return heightMap.get(k);
+        const h=getMenuCol(x,z).height;
+        heightMap.set(k,h);
+        return h;
+      }
+
+      function sampleHeightBilinear(x,z){
+        const x0=Math.floor(x),z0=Math.floor(z),x1=x0+1,z1=z0+1;
+        const tx=x-x0,tz=z-z0;
+        const h00=getHeight(x0,z0),h10=getHeight(x1,z0),h01=getHeight(x0,z1),h11=getHeight(x1,z1);
+        const hx0=h00+(h10-h00)*tx;
+        const hx1=h01+(h11-h01)*tx;
+        return hx0+(hx1-hx0)*tz;
+      }
+
+      sampleTerrainHeight=(x,z)=>sampleHeightBilinear(x,z);
+
+      const D=makeBlockTexture(([x,y])=>{
+        const v=h2(x*7+3,y*11+5,1001);
+        const v2=h2(x*13+y,y*7+x,1002);
+        if(v2>.88)return rgb(0x7a4f2c);
+        if(v2<.12)return rgb(0x9e6b3e);
+        return jit(0x8c5a30,.22,v);
+      });
+
+      const GT=makeBlockTexture(([x,y])=>{
+        const macro=fbm2(x*.12,y*.12,3,.55,2.0,1003);
+        const blades=fbm2((x+4)*.38,(y-3)*.38,2,.5,2.0,1004);
+        const shade=THREE.MathUtils.clamp(.72+macro*.32,0,1);
+        const base=new THREE.Color(0x5ca63d).lerp(new THREE.Color(0x79bf54),shade);
+        if(blades>.68)base.lerp(new THREE.Color(0x8acb62),0.28);
+        if(blades<.28)base.lerp(new THREE.Color(0x4a8c31),0.22);
+        return [Math.round(base.r*255),Math.round(base.g*255),Math.round(base.b*255),255];
+      });
+
+      const GS=makeBlockTexture(([x,y])=>{
+        const grassBand=fbm2(x*.18,y*.22,2,.55,2.0,1005);
+        const dirtNoise=h2(x*5,y*9,1007);
+        if(y<4){
+          const top=new THREE.Color(0x5fa840).lerp(new THREE.Color(0x79bf54),grassBand*.7);
+          return [Math.round(top.r*255),Math.round(top.g*255),Math.round(top.b*255),255];
+        }
+        if(y<7){
+          const mix=(y-4)/3;
+          const grass=new THREE.Color(0x557e33).lerp(new THREE.Color(0x6aa044),grassBand*.55);
+          const dirtCol=new THREE.Color(...jit(0x8c5a30,.14,dirtNoise).slice(0,3).map(v=>v/255));
+          grass.lerp(dirtCol,mix*.72);
+          return [Math.round(grass.r*255),Math.round(grass.g*255),Math.round(grass.b*255),255];
+        }
+        return jit(0x8c5a30,.14,dirtNoise);
+      });
+
+      const ST=makeBlockTexture(([x,y])=>{
+        const n1=fbm2(x*.31,y*.31,3,.56,2.0,1008);
+        const n2=h2(x*17+y*7,y*13+x*11,1009);
+        const fiss=fbm2((x+2)*.58,(y-1)*.58,2,.5,2.0,1010);
+        const c=new THREE.Color(0x7f848a).lerp(new THREE.Color(0xa7adb5),THREE.MathUtils.clamp(.22+n1*.72,0,1));
+        if(fiss<.16&&((x+y)&1)===0)c.lerp(new THREE.Color(0x666b71),0.55);
+        if(n2>.93)c.lerp(new THREE.Color(0xc2c7ce),0.42);
+        if(n2<.08)c.lerp(new THREE.Color(0x5c6066),0.50);
+        return [Math.round(c.r*255),Math.round(c.g*255),Math.round(c.b*255),255];
+      });
+
+      const SA=makeBlockTexture(([x,y])=>{
+        const grain=h2(x*11+y*5,y*9+x*7,1031);
+        const macro=fbm2((x+2)*.22,(y-1)*.22,2,.58,2.0,1032);
+        const dither=((x+y)&1)?0.03:-0.015;
+        const mixV=THREE.MathUtils.clamp(0.42+macro*0.40+dither,0,1);
+        const base=new THREE.Color(0xe0ca86).lerp(new THREE.Color(0xf1e1ad),mixV);
+        if(grain>.92)base.lerp(new THREE.Color(0xfff3cf),0.50);
+        else if(grain<.08)base.lerp(new THREE.Color(0xc9ad66),0.48);
+        const speck=h2(x*37+y*19,y*31+x*13,1033);
+        if(speck>.95)base.lerp(new THREE.Color(0xaa8b48),0.44);
+        if(speck<.05)base.lerp(new THREE.Color(0xfff8de),0.28);
+        return [Math.round(base.r*255),Math.round(base.g*255),Math.round(base.b*255),255];
+      });
+
+      const WS=makeBlockTexture(([x,y])=>{
+        const grain=h2(x*127,y*.5,1014);
+        const v=h2(x*3,y*5,1015);
+        const edgeDark=x<2||x>13;
+        const knot=Math.hypot(x-4,y-9)<1.4||Math.hypot(x-11,y-5)<1.1;
+        if(knot)return jit(0x3a2008,.08,v);
+        if(edgeDark)return jit(0x4a2e12,.10,v);
+        if(grain>.78)return jit(0x9a6e3a,.10,v);
+        if(grain<.22)return jit(0x6a4822,.12,v);
+        return jit(0x7a5426,.14,v);
+      });
+
+      const WT=makeBlockTexture(([x,y])=>{
+        const cx2=x-7.5,cy2=y-7.5;
+        const r=Math.sqrt(cx2*cx2+cy2*cy2);
+        const v=h2(x*5,y*7,1016);
+        if(r>6.4)return jit(0x3a2008,.10,v);
+        if(r>5.8)return jit(0x4e2e10,.08,v);
+        const ring=Math.sin(r*1.3)*.5+.5;
+        if(ring>.72)return jit(0x7a4e22,.12,v);
+        if(ring>.45)return jit(0x9e6630,.10,v);
+        return jit(0xb88040,.12,v);
+      });
+
+      const LV=makeBlockTexture(([x,y])=>{
+        const v=h2(x*7,y*11,25);
+        const e=x<2||y<2||x>13||y>13;
+        if(e&&v>.94)return[0,0,0,0];
+        return(x+y)%4===0?jit(0x63b16d,.10,v):jit(0x3b8747,.13,v);
+      });
+
+      const SN=makeBlockTexture(([x,y])=>{
+        const v=h2(x*9,y*7,1018);
+        const v2=h2(x*17+y,y*13+x,1019);
+        const shadow=v2>.76&&y>2;
+        const sparkle=h2(x*37,y*29,1020)>.94;
+        if(sparkle)return[255,255,255,255];
+        if(y<2)return[248,252,255,255];
+        if(shadow)return jit(0xcedaf0,.10,v);
+        return jit(0xe8f0fa,.08,v);
+      });
+
+      const SS=makeBlockTexture(([x,y])=>{
+        const v=h2(x*7,y*5,1021);
+        if(y<3)return jit(0xe8f0fa,.08,h2(x*9,y,1022));
+        if(y<6)return jit(0xc0cce0,.12,v);
+        return jit(0x8c5a30,.18,h2(x*5,y*9,1023));
+      });
+
+      animatedWaterTex=makeBlockTexture(([x,y])=>{
+        const w1=Math.sin(x*0.42+y*0.26)*0.5+0.5;
+        const w2=Math.sin(x*0.19-y*0.35+2.1)*0.5+0.5;
+        const w3=Math.sin((x+y)*0.33+1.4)*0.5+0.5;
+        const wave=w1*0.42+w2*0.36+w3*0.22;
+        if(wave>0.86)return[42,106,158,220];
+        if(wave>0.67)return[24,82,132,214];
+        if(wave<0.20)return[8,34,78,202];
+        return[14,58,104,210];
+      });
+
+      animatedWaterTex.magFilter=THREE.LinearFilter;
+      animatedWaterTex.minFilter=THREE.LinearFilter;
+      animatedWaterTex.needsUpdate=true;
+
+      D.repeat.set(1,1);
+      GT.repeat.set(1,1);
+      GS.repeat.set(1,1);
+      ST.repeat.set(1,1);
+      SA.repeat.set(1,1);
+      WS.repeat.set(1,1);
+      WT.repeat.set(1,1);
+      LV.repeat.set(1,1);
+      SN.repeat.set(1,1);
+      SS.repeat.set(1,1);
+      animatedWaterTex.repeat.set(32,32);
+
+      function pushTopByTag(bucket,tag,item){
+        if(tag==="sand"||tag==="red_sand")pushSectorItem(bucket,"topSand",item);
+        else if(tag==="snow")pushSectorItem(bucket,"topSnow",item);
+        else if(tag==="stone"||tag==="gravel"||tag==="clay")pushSectorItem(bucket,"topStone",item);
+        else if(tag==="mud"||tag==="dirt")pushSectorItem(bucket,"topDirt",item);
+        else pushSectorItem(bucket,"topGrass",item);
+      }
+
+      function pushBodyByTag(bucket,tag,item){
+        if(tag==="sand"||tag==="red_sand")pushSectorItem(bucket,"bodySand",item);
+        else if(tag==="stone"||tag==="gravel"||tag==="clay")pushSectorItem(bucket,"bodyStone",item);
+        else pushSectorItem(bucket,"bodyDirt",item);
+      }
+
+      function fillTerrainForBucket(bucket){
+        const sectorMinX=bucket.sx*sectorWorldSize;
+        const sectorMinZ=bucket.sz*sectorWorldSize;
+        const sectorMaxX=sectorMinX+sectorWorldSize-1;
+        const sectorMaxZ=sectorMinZ+sectorWorldSize-1;
+        const startX=Math.max(minX,sectorMinX);
+        const endX=Math.min(maxX,sectorMaxX);
+        const startZ=Math.max(minZ,sectorMinZ);
+        const endZ=Math.min(maxZ,sectorMaxZ);
+        if(startX>endX||startZ>endZ)return;
+
+        for(let z=startZ;z<=endZ;z++){
+          for(let x=startX;x<=endX;x++){
+            const col=getMenuCol(x,z);
+            const h=col.height;
+            const topY=h-0.5;
+            pushTopByTag(bucket,col.surfaceTag,{x,y:topY,z,sx:1,sy:1,sz:1});
+
+            const nearStart=Math.max(1,h-4);
+            for(let layer=nearStart;layer<=h-2;layer++){
+              const item={x,y:layer+0.5,z,sx:1,sy:1,sz:1};
+              const depth=h-layer;
+              const fillTag=depth<=2?col.fillerTag:col.subFillerTag;
+              pushBodyByTag(bucket,fillTag,item);
+            }
+
+            const coreHeight=nearStart;
+            if(coreHeight>0){
+              const core={x,y:(coreHeight-1)*0.5,z,sx:1,sy:coreHeight,sz:1};
+              pushBodyByTag(bucket,col.subFillerTag,core);
+            }
+          }
+        }
+      }
+
+      const unitGeo=new THREE.BoxGeometry(1,1,1);
+
+      function mkFaceMat(tex,mult,opt={}){
+        return new THREE.MeshStandardMaterial({
+          map:tex,
+          color:new THREE.Color(mult,mult,mult),
+          roughness:opt.roughness??1,
+          metalness:opt.metalness??0,
+          transparent:!!opt.transparent,
+          opacity:opt.opacity??1,
+          alphaTest:opt.alphaTest??0,
+          side:opt.side??THREE.FrontSide,
+          depthWrite:opt.depthWrite??true,
+          toneMapped:false
+        });
+      }
+
+      function cubeMats(sideTex,topTex,bottomTex,opt={}){
+        const sideMul=opt.sideMul??0.78;
+        const topMul=opt.topMul??1.0;
+        const bottomMul=opt.bottomMul??0.62;
+        return [
+          mkFaceMat(sideTex,sideMul,opt),
+          mkFaceMat(sideTex,sideMul,opt),
+          mkFaceMat(topTex,topMul,opt),
+          mkFaceMat(bottomTex,bottomMul,opt),
+          mkFaceMat(sideTex,sideMul,opt),
+          mkFaceMat(sideTex,sideMul,opt)
+        ];
+      }
+
+      const mats={
+        grass:cubeMats(GS,GT,D,{roughness:0.96}),
+        dirt:cubeMats(D,D,D,{roughness:1}),
+        stone:cubeMats(ST,ST,ST,{roughness:1}),
+        snow:cubeMats(SS,SN,D,{roughness:0.92}),
+        sand:cubeMats(SA,SA,SA,{roughness:0.96}),
+        trunk:cubeMats(WS,WT,WT,{roughness:1}),
+        leaf:cubeMats(LV,LV,LV,{roughness:0.96,transparent:true,alphaTest:0.14,opacity:0.97,topMul:0.98,sideMul:0.84,bottomMul:0.70}),
+        water:cubeMats(animatedWaterTex,animatedWaterTex,animatedWaterTex,{roughness:0.24,metalness:0.03,transparent:true,opacity:0.92,depthWrite:false,side:THREE.DoubleSide,topMul:0.97,sideMul:0.88,bottomMul:0.82})
+      };
+
+      mats.water.forEach(m=>{m.emissive=new THREE.Color(0x03162d);m.emissiveIntensity=0.14;});
+
+      function pushTreePart(bucket,listName,x,y,z,sx=1,sy=1,sz=1){
+        pushSectorItem(bucket,listName,{x,y,z,sx,sy,sz});
+      }
+
+      function fillTreesForBucket(bucket){
+        const sectorMinX=bucket.sx*sectorWorldSize;
+        const sectorMinZ=bucket.sz*sectorWorldSize;
+        const sectorMaxX=sectorMinX+sectorWorldSize-1;
+        const sectorMaxZ=sectorMinZ+sectorWorldSize-1;
+        const startX=Math.max(minX+2,sectorMinX);
+        const endX=Math.min(maxX-2,sectorMaxX);
+        const startZ=Math.max(minZ+2,sectorMinZ);
+        const endZ=Math.min(maxZ-2,sectorMaxZ);
+        if(startX>endX||startZ>endZ)return;
+
+        for(let z=startZ;z<=endZ;z++){
+          for(let x=startX;x<=endX;x++){
+            const col=getMenuCol(x,z);
+            if(!col.hasTree||col.treeType==="none")continue;
+
+            const h=col.height;
+            if(h<=waterLevel+1||h>=MENU_WORLD_HEIGHT-8)continue;
+
+            const slope=Math.max(
+              Math.abs(getHeight(x+1,z)-h),
+              Math.abs(getHeight(x-1,z)-h),
+              Math.abs(getHeight(x,z+1)-h),
+              Math.abs(getHeight(x,z-1)-h)
+            );
+            if(slope>2)continue;
+
+            const roll=h2(x*11+7,z*13-3,500);
+            const treeType=col.treeType;
+
+            if(treeType==="cactus"){
+              const cactusH=2+(roll>0.82?1:0)+(roll>0.96?1:0);
+              for(let ty=1;ty<=cactusH;ty++)pushTreePart(bucket,"trunkCols",x,h-0.5+ty,z,1,1,1);
+              if(roll>0.90){
+                const armY=h+Math.max(1,cactusH-1)-0.5;
+                pushTreePart(bucket,"trunkCols",x+1,armY,z,1,1,1);
+                if(roll>0.965)pushTreePart(bucket,"trunkCols",x-1,armY-1,z,1,1,1);
+              }
+              continue;
+            }
+
+            let trunkH=5;
+            if(treeType==="pine")trunkH=5+(roll>0.965?2:1);
+            else if(treeType==="jungle")trunkH=7+(roll>0.94?3:2);
+            else if(treeType==="acacia")trunkH=4+(roll>0.95?2:1);
+            else trunkH=4+(roll>0.98?2:1);
+
+            for(let ty=1;ty<=trunkH;ty++)pushTreePart(bucket,"trunkCols",x,h-0.5+ty,z,1,1,1);
+
+            const leafY=h+trunkH;
+            if(treeType==="pine"){
+              for(let layer=0;layer<4;layer++){
+                const radius=3-layer;
+                const y=leafY-layer;
+                for(let dz=-radius;dz<=radius;dz++){
+                  for(let dx=-radius;dx<=radius;dx++){
+                    const d=Math.abs(dx)+Math.abs(dz);
+                    if(d>radius+1)continue;
+                    if(dx===0&&dz===0&&layer<2)continue;
+                    if(h2((x+dx)*9,(z+dz)*11,515+layer)<0.08)continue;
+                    pushTreePart(bucket,"leafCols",x+dx,y,z+dz,1,1,1);
+                  }
+                }
+              }
+              pushTreePart(bucket,"leafCols",x,leafY+1,z,1,1,1);
+            }else if(treeType==="jungle"){
+              const layers=[
+                {r:2,y:leafY-2,cut:0.03},
+                {r:3,y:leafY-1,cut:0.05},
+                {r:3,y:leafY,cut:0.07},
+                {r:2,y:leafY+1,cut:0.04},
+                {r:1,y:leafY+2,cut:0.02}
+              ];
+              for(const L of layers){
+                for(let dz=-L.r;dz<=L.r;dz++){
+                  for(let dx=-L.r;dx<=L.r;dx++){
+                    const d=Math.abs(dx)+Math.abs(dz);
+                    if(d>L.r+1)continue;
+                    if(dx===0&&dz===0&&L.r>1)continue;
+                    if(h2((x+dx)*9,(z+dz)*11,526+L.r)<L.cut)continue;
+                    pushTreePart(bucket,"leafCols",x+dx,L.y,z+dz,1,1,1);
+                  }
+                }
+              }
+              pushTreePart(bucket,"leafCols",x,leafY+3,z,1,1,1);
+            }else if(treeType==="acacia"){
+              const leanX=h2(x*3+7,z*5+2,528)>0.5?1:-1;
+              const leanZ=h2(x*5+11,z*3+4,529)>0.5?1:-1;
+              const crownX=x+leanX;
+              const crownZ=z+leanZ;
+
+              for(let dz=-2;dz<=2;dz++){
+                for(let dx=-2;dx<=2;dx++){
+                  const d=Math.abs(dx)+Math.abs(dz);
+                  if(d>3)continue;
+                  if(dx===0&&dz===0)continue;
+                  if(h2((crownX+dx)*9,(crownZ+dz)*11,530)<0.05)continue;
+                  pushTreePart(bucket,"leafCols",crownX+dx,leafY,crownZ+dz,1,1,1);
+                }
+              }
+              for(let dz=-1;dz<=1;dz++){
+                for(let dx=-1;dx<=1;dx++){
+                  if(Math.abs(dx)+Math.abs(dz)>2)continue;
+                  pushTreePart(bucket,"leafCols",crownX+dx,leafY+1,crownZ+dz,1,1,1);
+                }
+              }
+              pushTreePart(bucket,"leafCols",crownX,leafY+2,crownZ,1,1,1);
+            }else{
+              const layers=[
+                {r:2,y:leafY-1,cut:0.03},
+                {r:2,y:leafY,cut:0.05},
+                {r:1,y:leafY+1,cut:0.02}
+              ];
+              for(const L of layers){
+                for(let dz=-L.r;dz<=L.r;dz++){
+                  for(let dx=-L.r;dx<=L.r;dx++){
+                    const d=Math.abs(dx)+Math.abs(dz);
+                    if(d>L.r+1)continue;
+                    if(dx===0&&dz===0&&L.r>1)continue;
+                    if(h2((x+dx)*9,(z+dz)*11,520+L.r)<L.cut)continue;
+                    pushTreePart(bucket,"leafCols",x+dx,L.y,z+dz,1,1,1);
+                  }
+                }
+              }
+              pushTreePart(bucket,"leafCols",x,leafY+2,z,1,1,1);
+            }
+          }
+        }
+      }
+
+      function addInstancedToGroup(group,list,geometry,material){
+        if(!list.length)return;
+        const mesh=new THREE.InstancedMesh(geometry,material,list.length);
+        mesh.frustumCulled=false;
+        for(let i=0;i<list.length;i++){
+          const p=list[i];
+          tmpObj.position.set(p.x,p.y,p.z);
+          tmpObj.scale.set(p.sx,p.sy,p.sz);
+          tmpObj.rotation.set(0,0,0);
+          tmpObj.updateMatrix();
+          mesh.setMatrixAt(i,tmpObj.matrix);
+        }
+        mesh.instanceMatrix.needsUpdate=true;
+        group.add(mesh);
+      }
+
+      function finalizeBucket(bucket){
+        const group=new THREE.Group();
+        addInstancedToGroup(group,bucket.bodyDirt,unitGeo,mats.dirt);
+        addInstancedToGroup(group,bucket.bodyStone,unitGeo,mats.stone);
+        addInstancedToGroup(group,bucket.bodySand,unitGeo,mats.sand);
+        addInstancedToGroup(group,bucket.topGrass,unitGeo,mats.grass);
+        addInstancedToGroup(group,bucket.topDirt,unitGeo,mats.dirt);
+        addInstancedToGroup(group,bucket.topSand,unitGeo,mats.sand);
+        addInstancedToGroup(group,bucket.topSnow,unitGeo,mats.snow);
+        addInstancedToGroup(group,bucket.topStone,unitGeo,mats.stone);
+        addInstancedToGroup(group,bucket.trunkCols,unitGeo,mats.trunk);
+        addInstancedToGroup(group,bucket.leafCols,unitGeo,mats.leaf);
+
+        if(!group.children.length)return;
+
+        const minSX=bucket.sx*sectorWorldSize;
+        const minSZ=bucket.sz*sectorWorldSize;
+        const maxY=Math.max(MENU_WORLD_HEIGHT+4,bucket.maxY+2);
+        const box=new THREE.Box3(
+          new THREE.Vector3(minSX,0,minSZ),
+          new THREE.Vector3(minSX+sectorWorldSize,maxY,minSZ+sectorWorldSize)
+        );
+
+        group.visible=false;
+        worldRoot.add(group);
+        bgOcclusionSectors.push({
+          group,
+          box,
+          centerX:(box.min.x+box.max.x)*0.5,
+          centerZ:(box.min.z+box.max.z)*0.5,
+          topY:box.max.y
+        });
+      }
+
+      const minSectorX=Math.floor(minX/sectorWorldSize);
+      const minSectorZ=Math.floor(minZ/sectorWorldSize);
+      const maxSectorX=Math.floor(maxX/sectorWorldSize);
+      const maxSectorZ=Math.floor(maxZ/sectorWorldSize);
+      const centerSectorX=bgWorldBounds.centerX/sectorWorldSize;
+      const centerSectorZ=bgWorldBounds.centerZ/sectorWorldSize;
+
+      const sectorJobs=[];
+      for(let sz=minSectorZ;sz<=maxSectorZ;sz++){
+        for(let sx=minSectorX;sx<=maxSectorX;sx++){
+          const dx=sx-centerSectorX;
+          const dz=sz-centerSectorZ;
+          sectorJobs.push({sx,sz,rank:(dx*dx)+(dz*dz)});
+        }
+      }
+      sectorJobs.sort((a,b)=>a.rank-b.rank);
+      bgBuildPendingSectors=sectorJobs.length;
+
+      function buildSectorsProgressive(){
+        const started=performance.now();
+        let built=0;
+
+        while(sectorJobs.length&&(
+          built<MENU_BG_BUILD_MIN_BATCH||
+          (performance.now()-started)<MENU_BG_BUILD_BUDGET_MS
+        )){
+          const job=sectorJobs.shift();
+          const bucket=makeEmptyBucket(job.sx,job.sz);
+          fillTerrainForBucket(bucket);
+          fillTreesForBucket(bucket);
+          finalizeBucket(bucket);
+          built++;
+        }
+
+        bgBuildPendingSectors=sectorJobs.length;
+        bgOcclusionLastUpdate=-Infinity;
+        if(!sectorJobs.length)bgBuildStepFn=null;
+      }
+
+      bgBuildStepFn=buildSectorsProgressive;
+      bgBuildStepFn();
+
+      const waterPlaneMargin=MENU_BG_CHUNK_SIZE*3;
+      const worldW=(maxX-minX)+2+(waterPlaneMargin*2);
+      const worldD=(maxZ-minZ)+2+(waterPlaneMargin*2);
+      const waterPlaneGeo=new THREE.PlaneGeometry(worldW,worldD,1,1);
+      waterPlaneGeo.rotateX(-Math.PI/2);
+      const waterPlane=new THREE.Mesh(waterPlaneGeo,mats.water[2]);
+      waterPlane.position.x=(minX+maxX)*0.5;
+      waterPlane.position.z=(minZ+maxZ)*0.5;
+      waterPlane.position.y=waterLevel+0.12;
+      waterPlane.frustumCulled=false;
+      worldRoot.add(waterPlane);
+
+      menuCloudGroup=createMenuCloudLayer(seedText);
+      worldRoot.add(menuCloudGroup);
+    }
+
+    function updateMenuOcclusion(nowMs){
+      if(!bgOcclusionSectors.length)return;
+      if(nowMs-bgOcclusionLastUpdate<MENU_BG_OCCLUSION_UPDATE_MS)return;
+      bgOcclusionLastUpdate=nowMs;
+
+      camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+      bgOcclusionProjMatrix.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);
+      bgOcclusionFrustum.setFromProjectionMatrix(bgOcclusionProjMatrix);
+
+      for(let i=0;i<MENU_BG_OCCLUSION_BINS;i++)bgOcclusionBins[i]=-Infinity;
+
+      const candidates=[];
+      const camX=camera.position.x;
+      const camY=camera.position.y;
+      const camZ=camera.position.z;
+      const nearAlwaysVisible=(MENU_BG_CHUNK_SIZE*MENU_BG_OCCLUSION_SECTOR_CHUNKS)*1.35;
+
+      for(let i=0;i<bgOcclusionSectors.length;i++){
+        const sector=bgOcclusionSectors[i];
+        if(!bgOcclusionFrustum.intersectsBox(sector.box)){
+          sector.group.visible=false;
+          continue;
+        }
+
+        const dx=sector.centerX-camX;
+        const dz=sector.centerZ-camZ;
+        const dist=Math.hypot(dx,dz)+0.0001;
+
+        const minX=sector.box.min.x;
+        const maxX=sector.box.max.x;
+        const minZ=sector.box.min.z;
+        const maxZ=sector.box.max.z;
+        const cx=sector.centerX;
+        const cz=sector.centerZ;
+        const y=sector.topY;
+
+        candidates.push({
+          sector,
+          dist,
+          near:dist<=nearAlwaysVisible,
+          samples:[
+            [minX,y,minZ],[maxX,y,minZ],[minX,y,maxZ],[maxX,y,maxZ],
+            [cx,y,minZ],[cx,y,maxZ],[minX,y,cz],[maxX,y,cz],[cx,y,cz]
+          ]
+        });
+      }
+
+      candidates.sort((a,b)=>a.dist-b.dist);
+
+      for(let i=0;i<candidates.length;i++){
+        const c=candidates[i];
+        let visible=c.near;
+        const sampleBins=[];
+
+        for(let s=0;s<c.samples.length;s++){
+          const sp=c.samples[s];
+          const sdx=sp[0]-camX;
+          const sdz=sp[2]-camZ;
+          const sDist=Math.hypot(sdx,sdz)+0.0001;
+          const az=(Math.atan2(sdz,sdx)+Math.PI)/(Math.PI*2);
+          const bin=Math.min(MENU_BG_OCCLUSION_BINS-1,Math.max(0,Math.floor(az*MENU_BG_OCCLUSION_BINS)));
+          const slope=(sp[1]-camY)/sDist;
+          sampleBins.push([bin,slope]);
+
+          if(!visible&&slope>=bgOcclusionBins[bin]-MENU_BG_OCCLUSION_VISIBILITY_BIAS){
+            visible=true;
+          }
+        }
+
+        c.sector.group.visible=visible;
+
+        if(visible){
+          for(let s=0;s<sampleBins.length;s++){
+            const bin=sampleBins[s][0];
+            const nextH=sampleBins[s][1]+MENU_BG_OCCLUSION_HORIZON_GROWTH;
+            if(nextH>bgOcclusionBins[bin])bgOcclusionBins[bin]=nextH;
+          }
+        }
+      }
+    }
+
+    buildWorldBackground(menuBackgroundSeedText);
+
+    const camSmPos=new THREE.Vector3();
+    const camSmLook=new THREE.Vector3();
+    const camTargetPos=new THREE.Vector3();
+    const camTargetLook=new THREE.Vector3();
+    const camPathPos=new THREE.Vector3();
+    const camPathAhead=new THREE.Vector3();
+    const camPathLook=new THREE.Vector3();
+    let camPosCurve=null;
+    let camLookCurve=null;
+    let camPathPhase=0;
+    let camPathSpeed=0.00078;
+    let camPathOffset=0;
+    let camInit=false;
+    let lastBgT=0;
+    let rayMaxSm=24;
+
+    function buildCinematicCurves(){
+      const chunkCenters=[];
+      for(const key of MENU_BG_CHUNK_LAYOUT.active){
+        const [cxRaw,czRaw]=key.split(",");
+        const cx=Number(cxRaw),cz=Number(czRaw);
+        chunkCenters.push({
+          cx,
+          cz,
+          x:cx*MENU_BG_CHUNK_SIZE+MENU_BG_CHUNK_SIZE*0.5,
+          z:cz*MENU_BG_CHUNK_SIZE+MENU_BG_CHUNK_SIZE*0.5
+        });
+      }
+      const rows=new Map();
+      for(const c of chunkCenters){
+        if(!rows.has(c.cz))rows.set(c.cz,[]);
+        rows.get(c.cz).push(c);
+      }
+
+      const ordered=[];
+      const rowKeys=Array.from(rows.keys()).sort((a,b)=>a-b);
+      for(let r=0;r<rowKeys.length;r++){
+        const row=rows.get(rowKeys[r]);
+        row.sort((a,b)=>a.cx-b.cx);
+        if(r&1)row.reverse();
+        ordered.push(...row);
+      }
+
+      if(!ordered.length){
+        ordered.push(
+          {x:bgWorldBounds.centerX,z:bgWorldBounds.centerZ,cx:0,cz:0},
+          {x:bgWorldBounds.centerX+12,z:bgWorldBounds.centerZ+8,cx:0,cz:0},
+          {x:bgWorldBounds.centerX-10,z:bgWorldBounds.centerZ-6,cx:0,cz:0}
+        );
+      }
+
+      const pointCount=Math.min(30,Math.max(16,Math.floor(ordered.length*0.45)));
+      const stride=Math.max(1,Math.floor(ordered.length/pointCount));
+      const posPts=[];
+      const lookPts=[];
+
+      for(let i=0;i<pointCount;i++){
+        const idx=(i*stride)%ordered.length;
+        const c=ordered[idx];
+        const nx=(h2(i*31+5,c.cx*11+7,932)-0.5)*3.0;
+        const nz=(h2(i*37+9,c.cz*13+4,933)-0.5)*3.0;
+
+        const px=THREE.MathUtils.clamp(c.x+nx,bgWorldBounds.minX+10,bgWorldBounds.maxX-10);
+        const pz=THREE.MathUtils.clamp(c.z+nz,bgWorldBounds.minZ+10,bgWorldBounds.maxZ-10);
+        const py=Math.max(sampleTerrainHeight(px,pz)+12.4,bgWorldBounds.waterLevel+17.2);
+        posPts.push(new THREE.Vector3(px,py,pz));
+
+        const lookIdx=(idx+Math.max(3,Math.floor(ordered.length*0.16)))%ordered.length;
+        const lc=ordered[lookIdx];
+        const lx=THREE.MathUtils.clamp(THREE.MathUtils.lerp(px,lc.x,0.72)+(h2(i*47+3,i*11+5,936)-0.5)*1.2,bgWorldBounds.minX+7,bgWorldBounds.maxX-7);
+        const lz=THREE.MathUtils.clamp(THREE.MathUtils.lerp(pz,lc.z,0.72)+(h2(i*53+1,i*7+9,937)-0.5)*1.2,bgWorldBounds.minZ+7,bgWorldBounds.maxZ-7);
+        const ly=Math.max(sampleTerrainHeight(lx,lz)+5.4,bgWorldBounds.waterLevel+6.0);
+        lookPts.push(new THREE.Vector3(lx,ly,lz));
+      }
+
+      camPosCurve=new THREE.CatmullRomCurve3(posPts,true,"centripetal",0.0);
+      camLookCurve=new THREE.CatmullRomCurve3(lookPts,true,"centripetal",0.0);
+      camPathOffset=h2(19,7,940);
+      camPathSpeed=0.00078+h2(31,11,941)*0.00012;
+      camPathPhase=camPathOffset;
+      camInit=false;
+      lastBgT=0;
+      rayMaxSm=bgWorldBounds.waterLevel+14;
+    }
+
+    function terrainPatchMaxHeight(x,z,radius=2.6){
+      let m=-Infinity;
+      const samples=[
+        [0,0],[1,0],[-1,0],[0,1],[0,-1],[0.72,0.72],[-0.72,0.72],[0.72,-0.72],[-0.72,-0.72]
+      ];
+      for(let i=0;i<samples.length;i++){
+        const s=samples[i];
+        const h=sampleTerrainHeight(x+s[0]*radius,z+s[1]*radius);
+        if(h>m)m=h;
+      }
+      return m;
+    }
+
+    function terrainRayMaxHeight(ax,az,bx,bz,steps=28){
+      let m=-Infinity;
+      for(let i=0;i<=steps;i++){
+        const u=i/steps;
+        const x=ax+(bx-ax)*u;
+        const z=az+(bz-az)*u;
+        const h=terrainPatchMaxHeight(x,z,2.2);
+        if(h>m)m=h;
+      }
+      return m;
+    }
+
+    function animateBg(t){
+      if(!camPosCurve||!camLookCurve)buildCinematicCurves();
+
+      if(menuBackgroundSuspended){
+        if(bgBuildStepFn)bgBuildStepFn();
+        requestAnimationFrame(animateBg);
+        return;
+      }
+
+      const tt=t*0.001;
+      const dt=lastBgT>0?Math.min(0.05,Math.max(0.001,(t-lastBgT)*0.001)):0.016;
+      lastBgT=t;
+
+      camPathPhase=(tt*camPathSpeed+camPathOffset)%1;
+
+      if(animatedWaterTex){
+        animatedWaterTex.offset.x=(tt*0.0065)%1;
+        animatedWaterTex.offset.y=(tt*0.0045)%1;
+      }
+
+      camPosCurve.getPointAt(camPathPhase,camPathPos);
+      camPosCurve.getPointAt((camPathPhase+0.0026)%1,camPathAhead);
+      camLookCurve.getPointAt((camPathPhase+0.0084)%1,camPathLook);
+
+      const desiredX=THREE.MathUtils.clamp(camPathPos.x,bgWorldBounds.minX+8,bgWorldBounds.maxX-8);
+      const desiredZ=THREE.MathUtils.clamp(camPathPos.z,bgWorldBounds.minZ+8,bgWorldBounds.maxZ-8);
+      const desiredLookX=THREE.MathUtils.clamp(THREE.MathUtils.lerp(camPathAhead.x,camPathLook.x,0.72),bgWorldBounds.minX+6,bgWorldBounds.maxX-6);
+      const desiredLookZ=THREE.MathUtils.clamp(THREE.MathUtils.lerp(camPathAhead.z,camPathLook.z,0.72),bgWorldBounds.minZ+6,bgWorldBounds.maxZ-6);
+
+      const rayMaxT=terrainRayMaxHeight(desiredX,desiredZ,desiredLookX,desiredLookZ,28);
+      rayMaxSm=THREE.MathUtils.damp(rayMaxSm,rayMaxT,2.8,dt);
+
+      const localMax=terrainPatchMaxHeight(desiredX,desiredZ,3.2);
+      const lookLocal=terrainPatchMaxHeight(desiredLookX,desiredLookZ,2.8);
+
+      const desiredY=Math.max(
+        camPathPos.y,
+        localMax+13.9,
+        rayMaxSm+9.2,
+        bgWorldBounds.waterLevel+18.4
+      );
+      const desiredLookY=Math.max(
+        camPathLook.y,
+        lookLocal+5.4,
+        rayMaxSm+3.8,
+        bgWorldBounds.waterLevel+6.4
+      );
+
+      const targetFov=59.2;
+      if(Math.abs(camera.fov-targetFov)>0.01){
+        camera.fov=THREE.MathUtils.damp(camera.fov,targetFov,0.82,dt);
+        camera.updateProjectionMatrix();
+      }
+
+      camTargetPos.set(desiredX,desiredY,desiredZ);
+      camTargetLook.set(desiredLookX,desiredLookY,desiredLookZ);
+
+      if(!camInit){
+        camSmPos.copy(camTargetPos);
+        camSmLook.copy(camTargetLook);
+        camInit=true;
+      }
+
+      const posSmooth=1.45;
+      const lookSmooth=1.95;
+      camSmPos.x=THREE.MathUtils.damp(camSmPos.x,camTargetPos.x,posSmooth,dt);
+      camSmPos.y=THREE.MathUtils.damp(camSmPos.y,camTargetPos.y,posSmooth,dt);
+      camSmPos.z=THREE.MathUtils.damp(camSmPos.z,camTargetPos.z,posSmooth,dt);
+
+      camSmLook.x=THREE.MathUtils.damp(camSmLook.x,camTargetLook.x,lookSmooth,dt);
+      camSmLook.y=THREE.MathUtils.damp(camSmLook.y,camTargetLook.y,lookSmooth,dt);
+      camSmLook.z=THREE.MathUtils.damp(camSmLook.z,camTargetLook.z,lookSmooth,dt);
+
+      camera.position.copy(camSmPos);
+      camera.lookAt(camSmLook);
+      camera.updateMatrixWorld();
+      updateMenuCelestials(dt);
+      updateMenuClouds(dt);
+      if(bgBuildStepFn)bgBuildStepFn();
+      updateMenuOcclusion(t);
+
+      renderer.render(scene,camera);
+      requestAnimationFrame(animateBg);
+    }
+    requestAnimationFrame(animateBg);
+
+    window.addEventListener("resize",()=>{
+      renderer.setSize(window.innerWidth,window.innerHeight,false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.7));
+      camera.aspect=window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+
+    const gs=getSettings();
+    renderDistInput.value=String(Math.max(2,Math.min(8,Math.round(Number(gs.renderDist)||3))));
+    updateSeedPreview();
+    updatePresetHint();
+    setRandomSplash();
+    setInterval(setRandomSplash,6500);
+  </script>
+</body>
 </html>
