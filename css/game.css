@@ -1,5 +1,4 @@
-    
-    *{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0}
     html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:"Trebuchet MS",Verdana,sans-serif;color:#fff}
     body{position:relative}
     canvas{display:block}
@@ -10,6 +9,60 @@
       --hud-line:rgba(255,198,102,0.34);
       --hud-shadow:rgba(0,0,0,0.62);
     }
+    #loadingScreen{
+      position:fixed;inset:0;z-index:1000;
+      display:flex;align-items:center;justify-content:center;
+      background:
+        radial-gradient(ellipse at 50% 30%, rgba(60,44,24,.55), rgba(0,0,0,0) 60%),
+        repeating-linear-gradient(45deg, #171310 0 24px, #1c1712 24px 48px),
+        #14100c;
+      transition:opacity 420ms ease, visibility 420ms ease;
+    }
+    #loadingScreen.fadeOut{opacity:0;visibility:hidden;pointer-events:none}
+    #loadingInner{
+      display:flex;flex-direction:column;align-items:center;gap:22px;
+      width:min(420px,86vw);
+    }
+    #loadingLogo{
+      font-size:2.3rem;font-weight:700;letter-spacing:.02em;color:#fff;
+      text-shadow:3px 3px 0 rgba(0,0,0,.55);
+      animation:loadingLogoPulse 2.2s ease-in-out infinite;
+    }
+    #loadingLogo span{color:var(--hud-amber)}
+    @keyframes loadingLogoPulse{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.035)}
+    }
+    #loadingBarOuter{
+      position:relative;width:100%;height:22px;border-radius:3px;
+      background:#0b0906;border:2px solid #000;
+      box-shadow:inset 0 0 0 2px rgba(255,255,255,.06), 0 2px 0 rgba(0,0,0,.4);
+      overflow:hidden;
+    }
+    #loadingBarInner{
+      position:absolute;top:0;left:0;bottom:0;width:0%;
+      background:linear-gradient(180deg, #ffdb8a 0%, var(--hud-amber) 45%, #a9782f 100%);
+      transition:width 260ms ease-out;
+    }
+    #loadingBarInner::after{
+      content:"";position:absolute;inset:0;
+      background:repeating-linear-gradient(90deg, rgba(255,255,255,.16) 0 10px, rgba(255,255,255,0) 10px 20px);
+    }
+    #loadingBarPct{
+      position:relative;z-index:1;height:100%;display:flex;align-items:center;justify-content:center;
+      font-size:.78rem;font-weight:700;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,.75);
+    }
+    #loadingStatus{
+      font-size:.86rem;color:rgba(255,255,255,.82);letter-spacing:.01em;
+      min-height:1.2em;text-align:center;
+    }
+    #loadingTip{
+      font-size:.76rem;color:rgba(255,236,188,.62);text-align:center;
+      min-height:1.4em;transition:opacity 300ms ease;
+    }
+    #loadingScreen.error #loadingLogo{animation:none}
+    #loadingScreen.error #loadingBarInner{background:linear-gradient(180deg,#ff8a7a,#c23b2b)}
+    #loadingScreen.error #loadingStatus{color:#ffb3a6}
     #titleCard{
       position:absolute;top:20px;left:20px;padding:14px 18px;border-radius:12px;
       background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.12);
@@ -679,4 +732,3 @@
     @media (max-width:560px){
       .pm-grid{grid-template-columns:1fr}
     }
-  

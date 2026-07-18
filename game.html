@@ -7,7 +7,18 @@
   <link rel="stylesheet" href="./css/game.css"/>
 </head>
 <body>
-  <div id="titleCard">
+  <div id="loadingScreen">
+    <div id="loadingInner">
+      <div id="loadingLogo">Blockie<span>Craft</span></div>
+      <div id="loadingBarOuter">
+        <div id="loadingBarInner"></div>
+        <div id="loadingBarPct">0%</div>
+      </div>
+      <div id="loadingStatus">Downloading game files&hellip;</div>
+      <div id="loadingTip"></div>
+    </div>
+  </div>
+  <div id="titleCard" class="hidden">
     <h1>BlockieCraft</h1>
     <p>Click to play &nbsp;·&nbsp; <strong>WASD</strong> move &nbsp;·&nbsp; <strong>Space</strong> jump &nbsp;·&nbsp; <strong>2×W</strong> sprint &nbsp;·&nbsp; <strong>Shift</strong> sneak &nbsp;·&nbsp; <strong>F5/V</strong> camera &nbsp;·&nbsp; <strong>1-9</strong> hotbar &nbsp;·&nbsp; <strong>E</strong> inventory &nbsp;·&nbsp; <strong>T</strong> or <strong>/</strong> chat &nbsp;·&nbsp; <strong>LMB</strong> break &nbsp;·&nbsp; <strong>RMB</strong> place &nbsp;·&nbsp; <strong>R</strong> respawn</p>
     <p id="worldMeta">World: Overworld · Seed: 48151623 · Preset: Balanced</p>
