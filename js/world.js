@@ -999,33 +999,14 @@ function getCol(x,z){
   const riverStrength=_noise01(center.riverStrength,0);
   const land=_noise01(center.land,.5);
 
-  // The raw noise carve above often only dips terrain 1 block under the
-  // waterline — that reads as a puddle, not a river, and sometimes doesn't
-  // dip below the waterline at all, breaking the channel into gaps.
-  // Guarantee an actual channel depth anywhere the river band is active.
-  // IMPORTANT: minDepth must vary continuously with riverStrength — an
-  // earlier version rounded it to whole blocks (Math.round(riverStrength*4)),
-  // which turned a smoothly-varying riverbed into flat integer terraces
-  // (a visible staircase/checkerboard across the channel). The Math.min
-  // below is still a hard floor, but now the floor itself slopes smoothly
-  // from bank to core instead of jumping in 1-block steps.
-  if(riverStrength>0.05){
-    const minDepth=2+riverStrength*4; // ~2 blocks at the edges, up to ~6 at the core, continuous
-    height=Math.min(height,Math.floor(S.waterLevel-minDepth));
-  }
-  // Same story for inland ponds/depressions that aren't part of a river:
-  // a lone 1-block-deep dip is barely water. Give it real depth instead —
-  // gated on land>0.35 so this doesn't touch ocean coastline/beach shelves,
-  // which are supposed to shallow out gradually.
-  // IMPORTANT: the old check only fired when height landed on the *exact*
-  // integer S.waterLevel-1, so it hit isolated columns with no relation to
-  // their neighbors — a scattered, punctual override that shows up as
-  // random single-block pits (checkerboard) rather than a real pond basin.
-  // Widen it to a small band so it catches every shallow dip, not just the
-  // one lucky integer.
-  if(height>=S.waterLevel-2&&height<=S.waterLevel-1&&land>0.35){
-    height=S.waterLevel-2;
-  }
+  // Water placement is now purely "is this column's natural, already-smooth
+  // height below S.waterLevel (21)?" — no manual force-carve here anymore.
+  // sampleTerrainPoint() already blends each column gradually toward a
+  // river/pond target as part of the regular height noise, so raising the
+  // sea level is enough on its own to flood those lows without a second,
+  // discontinuous override layered on top (that second layer is what was
+  // causing the terracing/checkerboard and the vertical-shaft cave issue).
+
 
   const beach=height<=S.waterLevel+2&&height>=S.waterLevel-2;
   const under=height<S.waterLevel-1;
